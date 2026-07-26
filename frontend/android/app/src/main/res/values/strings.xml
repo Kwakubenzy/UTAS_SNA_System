@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UTAS SNA System</string>
+    <string name="title_activity_main">UTAS SNA System</string>
+    <string name="package_name">com.utas.snasystem</string>
+    <string name="custom_url_scheme">com.utas.snasystem</string>
+</resources>

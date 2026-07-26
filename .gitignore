@@ -17,5 +17,15 @@ backend/instance/
 frontend/node_modules/
 frontend/dist/
 
+# Firebase CLI local deploy cache
+.firebase/
+
+# Android/Capacitor build output (android/ project itself is committed)
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+frontend/android/capacitor-cordova-android-plugins/build/
+frontend/android/local.properties
+
 # Editors
 .idea/
