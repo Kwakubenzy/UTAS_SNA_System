@@ -1,0 +1,52 @@
+# Core Framework
+Flask>=2.3.0
+Flask-RESTful>=0.3.10
+Flask-SQLAlchemy>=3.0.5
+Flask-CORS>=4.0.0
+Flask-JWT-Extended>=4.0.0
+Flask-Login>=0.6.0
+
+# Database
+SQLAlchemy>=2.0.0
+alembic>=1.12.0
+psycopg2-binary>=2.9.9
+
+# Production server (Cloud Run)
+gunicorn>=21.2.0
+
+# Authentication
+werkzeug>=2.0
+PyJWT>=2.0
+google-auth>=2.25.0
+
+# SNA Analysis
+NetworkX>=3.0
+python-louvain>=0.15
+node2vec>=0.4.0
+karateclub>=1.3.0
+
+# Machine Learning
+scikit-learn>=1.0
+numpy>=1.20
+pandas>=1.3
+
+# Data Processing
+openpyxl>=3.0
+python-dotenv>=0.19
+
+# Visualization
+matplotlib>=3.5
+seaborn>=0.12
+plotly>=5.0
+
+# Report Generation
+reportlab>=4.0
+weasyprint>=57.0
+
+# Testing
+pytest>=7.0
+pytest-cov>=4.0
+
+# Utilities
+requests>=2.25
+python-dateutil>=2.8

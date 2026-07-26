@@ -1,0 +1,21 @@
+# Secrets -- never commit real values, only .env.example files
+backend/.env
+frontend/.env
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Databases -- contains real student names/emails; never committed
+backend/instance/
+*.db
+
+# Frontend build output / deps
+frontend/node_modules/
+frontend/dist/
+
+# Editors
+.idea/

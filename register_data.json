@@ -1,0 +1,9 @@
+{
+    "username": "alice",
+    "email": "alice@utas.edu",
+    "password": "Alice123!",
+    "full_name": "Alice Johnson",
+    "college": "College of Science",
+    "department": "Biology",
+    "year": 3
+}

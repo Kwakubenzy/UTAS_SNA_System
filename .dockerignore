@@ -1,0 +1,17 @@
+frontend/
+docs/
+notebooks/
+data/
+venv/
+.git/
+.claude/
+.agents/
+.idea/
+.vscode/
+backend/instance/
+backend/.env
+backend/**/__pycache__/
+**/*.pyc
+*.db
+*.docx
+*.pdf
