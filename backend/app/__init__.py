@@ -7,7 +7,12 @@ from app.services.auth_service import AuthService
 import logging
 import os
 
-load_dotenv()
+# load_dotenv() with no argument only searches upward from the process's
+# current working directory, never downward -- fine locally (dev always runs
+# from backend/), but a WSGI host's cwd isn't guaranteed to be backend/ at
+# all, so this pins it to the .env file's actual location instead.
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_BACKEND_DIR, '.env'))
 
 def _build_production_database_uri():
     """Resolve the production SQLALCHEMY_DATABASE_URI.
