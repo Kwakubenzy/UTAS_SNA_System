@@ -65,7 +65,12 @@ def create_app(config_name='development'):
     
     # Initialize extensions
     db.init_app(app)
-    CORS(app)
+    # max_age caches each route's CORS preflight (OPTIONS) response in the
+    # browser, so repeat requests to the same endpoint skip that extra
+    # round trip -- otherwise every single authenticated request (the
+    # Authorization header makes it a "non-simple" CORS request) pays for
+    # a full second round trip on top of the real one, every time.
+    CORS(app, max_age=3600)
     jwt = JWTManager(app)
     
     # Register blueprints
