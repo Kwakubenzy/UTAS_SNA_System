@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Search, UserCog } from 'lucide-react';
+import { Search, UserCog, KeyRound, Copy } from 'lucide-react';
 import api from '../services/api';
 import { User } from '../types';
 import { usePagination } from '../hooks/usePagination';
@@ -11,12 +11,16 @@ import { Badge } from '../components/ui/Badge';
 import { Pagination } from '../components/ui/Pagination';
 import { EmptyState } from '../components/ui/EmptyState';
 import { TableSkeleton } from '../components/ui/Skeleton';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 
 export const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const [resetResult, setResetResult] = useState<{ username: string; tempPassword: string } | null>(null);
+  const [resettingId, setResettingId] = useState<number | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -60,6 +64,23 @@ export const Users: React.FC = () => {
       }
     } catch (err: any) {
       toast.error(err.response?.data?.error || err.message || 'Failed to update user role');
+    }
+  };
+
+  const handleResetPassword = async (user: User) => {
+    if (!window.confirm(`Reset ${user.full_name}'s password to a new random one?`)) return;
+    setResettingId(user.id);
+    try {
+      const response = await api.adminResetPassword(user.id);
+      if (response.success && response.temporary_password) {
+        setResetResult({ username: user.username, tempPassword: response.temporary_password });
+      } else {
+        toast.error(response.message || 'Failed to reset password');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to reset password');
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -159,16 +180,26 @@ export const Users: React.FC = () => {
                       </td>
                       <td className="px-5 py-3 text-slate-500 dark:text-navy-300">{new Date(user.created_at).toLocaleDateString()}</td>
                       <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={() => handleToggleActive(user.id, user.is_active)}
-                          className={
-                            user.is_active
-                              ? 'rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10'
-                              : 'rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10'
-                          }
-                        >
-                          {user.is_active ? 'Deactivate' : 'Reactivate'}
-                        </button>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleResetPassword(user)}
+                            disabled={!user.is_active || resettingId === user.id}
+                            title="Reset password"
+                            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-navy-700 disabled:opacity-40 dark:hover:bg-navy-700 dark:hover:text-white"
+                          >
+                            <KeyRound className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleActive(user.id, user.is_active)}
+                            className={
+                              user.is_active
+                                ? 'rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10'
+                                : 'rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10'
+                            }
+                          >
+                            {user.is_active ? 'Deactivate' : 'Reactivate'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -179,6 +210,33 @@ export const Users: React.FC = () => {
           </>
         )}
       </Card>
+
+      <Modal open={resetResult !== null} onClose={() => setResetResult(null)} title="Password Reset">
+        {resetResult && (
+          <div>
+            <p className="mb-4 text-sm text-slate-500 dark:text-navy-300">
+              New temporary password for <span className="font-medium text-navy-900 dark:text-white">{resetResult.username}</span>.
+              Relay this to them directly &mdash; it will not be shown again.
+            </p>
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm text-navy-900 dark:border-navy-700 dark:bg-navy-900 dark:text-white">
+              <span className="flex-1 select-all">{resetResult.tempPassword}</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(resetResult.tempPassword);
+                  toast.success('Copied to clipboard');
+                }}
+                title="Copy"
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-navy-700 dark:hover:bg-navy-700 dark:hover:text-white"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+            <Button className="w-full" onClick={() => setResetResult(null)}>
+              Done
+            </Button>
+          </div>
+        )}
+      </Modal>
     </motion.div>
   );
 };

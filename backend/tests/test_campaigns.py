@@ -27,6 +27,24 @@ def test_create_campaign_with_unknown_manager_rejected(client, admin_token):
     assert resp.status_code == 404
 
 
+def test_create_campaign_rejects_invalid_target_party(client, admin_token):
+    manager = _create_manager_student(client, admin_token)
+    resp = client.post('/api/campaigns/', json={
+        'campaign_id': 'CAMP-1', 'campaign_name': 'X', 'manager_id': manager['id'], 'target_party': 'NOT_A_PARTY',
+    }, headers=auth_header(admin_token))
+    assert resp.status_code == 400
+
+
+def test_update_campaign_rejects_invalid_target_party(client, admin_token):
+    manager = _create_manager_student(client, admin_token)
+    created = client.post('/api/campaigns/', json={
+        'campaign_id': 'CAMP-1', 'campaign_name': 'X', 'manager_id': manager['id'],
+    }, headers=auth_header(admin_token)).get_json()['campaign']
+
+    resp = client.put(f"/api/campaigns/{created['id']}", json={'target_party': 'NOT_A_PARTY'}, headers=auth_header(admin_token))
+    assert resp.status_code == 400
+
+
 def test_update_campaign_status_and_description(client, admin_token):
     manager = _create_manager_student(client, admin_token)
     created = client.post('/api/campaigns/', json={

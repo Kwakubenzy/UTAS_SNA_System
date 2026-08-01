@@ -255,7 +255,10 @@ def change_password():
         
         if not data.get('old_password') or not data.get('new_password'):
             return jsonify({'success': False, 'message': 'Old and new password required'}), 400
-        
+
+        if len(data['new_password']) < 6:
+            return jsonify({'success': False, 'message': 'New password must be at least 6 characters'}), 400
+
         result = AuthService.change_password(
             user_id,
             data['old_password'],
@@ -340,6 +343,18 @@ def assign_role(user_id):
     except Exception as e:
         logger.error(f'Assign role error: {str(e)}')
         return jsonify({'success': False, 'message': 'Role assignment failed'}), 500
+
+
+@auth_bp.route('/users/<int:user_id>/reset-password', methods=['POST'])
+@admin_required
+def admin_reset_password(user_id):
+    """Reset a user's password to a random temporary value (admin only)"""
+    try:
+        result = AuthService.admin_reset_password(user_id)
+        return jsonify(result), 200 if result['success'] else 400
+    except Exception as e:
+        logger.error(f'Admin password reset error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to reset password'}), 500
 
 
 @auth_bp.route('/users/<int:user_id>/status', methods=['PUT'])

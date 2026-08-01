@@ -60,6 +60,27 @@ def test_change_password_then_login_with_new_password(client, student_token):
     assert resp.status_code == 200
 
 
+def test_change_password_rejects_short_new_password(client, student_token):
+    resp = client.post('/api/auth/change-password', json={
+        'old_password': 'Testpass1', 'new_password': 'ab',
+    }, headers=auth_header(student_token))
+    assert resp.status_code == 400
+
+
+def test_update_profile_rejects_duplicate_email_with_clean_message(client):
+    client.post('/api/auth/register', json={
+        'username': 'userone', 'email': 'taken@utas.edu', 'password': 'Testpass1', 'full_name': 'One',
+    })
+    login = client.post('/api/auth/register', json={
+        'username': 'usertwo', 'email': 'usertwo@utas.edu', 'password': 'Testpass1', 'full_name': 'Two',
+    })
+    token = login.get_json()['tokens']['access_token']
+
+    resp = client.put('/api/auth/profile', json={'email': 'taken@utas.edu'}, headers=auth_header(token))
+    assert resp.status_code == 400
+    assert resp.get_json()['message'] == 'Email is already in use'
+
+
 def test_non_admin_cannot_list_users(client, student_token):
     resp = client.get('/api/auth/users', headers=auth_header(student_token))
     assert resp.status_code == 403
@@ -90,6 +111,30 @@ def test_admin_can_deactivate_and_deactivated_user_cannot_login(client, admin_to
     assert resp.status_code == 200
     login = client.post('/api/auth/login', json={'username': 'tobedeactivated', 'password': 'Testpass1'})
     assert login.status_code == 200
+
+
+def test_admin_can_reset_user_password(client, admin_token):
+    client.post('/api/auth/register', json={
+        'username': 'needsreset', 'email': 'needsreset@utas.edu', 'password': 'Testpass1', 'full_name': 'Needs Reset',
+    })
+    users = client.get('/api/auth/users', headers=auth_header(admin_token)).get_json()['users']
+    target = next(u for u in users if u['username'] == 'needsreset')
+
+    resp = client.post(f"/api/auth/users/{target['id']}/reset-password", headers=auth_header(admin_token))
+    assert resp.status_code == 200
+    temp_password = resp.get_json()['temporary_password']
+    assert len(temp_password) > 0
+
+    # Old password no longer works, new temporary one does.
+    old_login = client.post('/api/auth/login', json={'username': 'needsreset', 'password': 'Testpass1'})
+    assert old_login.status_code == 401
+    new_login = client.post('/api/auth/login', json={'username': 'needsreset', 'password': temp_password})
+    assert new_login.status_code == 200
+
+
+def test_reset_password_requires_admin(client, student_token):
+    resp = client.post('/api/auth/users/1/reset-password', headers=auth_header(student_token))
+    assert resp.status_code == 403
 
 
 def test_set_status_requires_admin(client, student_token):

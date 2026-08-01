@@ -74,7 +74,10 @@ def create_campaign():
         # Check if manager exists
         if not Student.query.get(data['manager_id']):
             return jsonify({'success': False, 'error': 'Manager not found'}), 404
-        
+
+        if data.get('target_party') and data['target_party'] not in ['TESCON', 'TEIN']:
+            return jsonify({'success': False, 'error': 'Target party must be TESCON or TEIN'}), 400
+
         campaign = Campaign(
             campaign_id=data['campaign_id'],
             campaign_name=data['campaign_name'],
@@ -116,6 +119,8 @@ def update_campaign(campaign_id):
         if 'description' in data:
             campaign.description = data['description']
         if 'target_party' in data:
+            if data['target_party'] and data['target_party'] not in ['TESCON', 'TEIN']:
+                return jsonify({'success': False, 'error': 'Target party must be TESCON or TEIN'}), 400
             campaign.target_party = data['target_party']
         if 'status' in data:
             campaign.status = data['status']

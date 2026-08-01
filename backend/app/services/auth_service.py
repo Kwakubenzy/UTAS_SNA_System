@@ -160,7 +160,11 @@ class AuthService:
             
             # Fields that can be updated
             allowed_fields = ['full_name', 'tribe', 'party', 'college', 'department', 'year', 'email']
-            
+
+            if 'email' in kwargs and kwargs['email'] and kwargs['email'] != user.email:
+                if User.query.filter_by(email=kwargs['email']).first():
+                    return {'success': False, 'message': 'Email is already in use'}
+
             for field, value in kwargs.items():
                 if field in allowed_fields and value is not None:
                     setattr(user, field, value)
@@ -267,6 +271,37 @@ class AuthService:
             logger.error(f'Role assignment error: {str(e)}')
             return {'success': False, 'message': str(e)}
     
+    @staticmethod
+    def admin_reset_password(user_id):
+        """Reset a user's password to a random temporary value (admin only).
+
+        Returns the plaintext temporary password exactly once, in this
+        response -- it is never stored or logged anywhere, only its hash.
+        The admin is expected to relay it to the user out-of-band (in
+        person, campus email, etc.), same as the existing "contact your
+        administrator" flow already tells users to do.
+        """
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return {'success': False, 'message': 'User not found'}
+
+            temp_password = secrets.token_urlsafe(9)
+            user.set_password(temp_password)
+            db.session.commit()
+
+            logger.info(f'Password reset by admin for user: {user.username}')
+            return {
+                'success': True,
+                'message': 'Password reset successfully',
+                'temporary_password': temp_password,
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f'Admin password reset error: {str(e)}')
+            return {'success': False, 'message': str(e)}
+
     @staticmethod
     def set_active_status(user_id, is_active):
         """Activate or deactivate a user account (admin only)"""

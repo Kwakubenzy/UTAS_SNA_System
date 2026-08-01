@@ -142,6 +142,11 @@ class ApiService {
     return response.data;
   }
 
+  async adminResetPassword(userId: number): Promise<{ success: boolean; message?: string; temporary_password?: string }> {
+    const response = await this.api.post(`/auth/users/${userId}/reset-password`, {});
+    return response.data;
+  }
+
   // Students endpoints
   async getStudents(filters?: StudentFilters): Promise<StudentsResponse> {
     const response = await this.api.get('/students', { params: filters });

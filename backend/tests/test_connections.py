@@ -47,6 +47,26 @@ def test_strength_out_of_range_rejected(client, admin_token):
     assert resp.status_code == 400
 
 
+def test_strength_explicit_null_rejected_cleanly(client, admin_token):
+    a, b = _create_two_students(client, admin_token)
+    resp = client.post('/api/connections/', json={
+        'from_student_id': a['id'], 'to_student_id': b['id'], 'strength': None,
+    }, headers=auth_header(admin_token))
+    assert resp.status_code == 201  # None is treated as "use the default", not a 500
+
+
+def test_reverse_direction_duplicate_connection_rejected(client, admin_token):
+    a, b = _create_two_students(client, admin_token)
+    client.post('/api/connections/', json={
+        'from_student_id': a['id'], 'to_student_id': b['id'],
+    }, headers=auth_header(admin_token))
+
+    resp = client.post('/api/connections/', json={
+        'from_student_id': b['id'], 'to_student_id': a['id'],
+    }, headers=auth_header(admin_token))
+    assert resp.status_code == 400
+
+
 def test_update_and_delete_connection(client, admin_token):
     a, b = _create_two_students(client, admin_token)
     created = client.post('/api/connections/', json={

@@ -78,7 +78,10 @@ def create_student():
         # Validate party
         if data['party'] not in ['TESCON', 'TEIN']:
             return jsonify({'success': False, 'error': 'Party must be TESCON or TEIN'}), 400
-        
+
+        if data.get('email') and Student.query.filter_by(email=data['email']).first():
+            return jsonify({'success': False, 'error': 'Email is already in use by another student'}), 400
+
         student = Student(
             student_id=data['student_id'],
             name=data['name'],
@@ -133,6 +136,8 @@ def update_student(student_id):
         if 'year' in data:
             student.year = data['year']
         if 'email' in data:
+            if data['email'] and data['email'] != student.email and Student.query.filter_by(email=data['email']).first():
+                return jsonify({'success': False, 'error': 'Email is already in use by another student'}), 400
             student.email = data['email']
         if 'phone' in data:
             student.phone = data['phone']

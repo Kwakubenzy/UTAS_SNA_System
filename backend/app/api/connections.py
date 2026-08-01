@@ -83,13 +83,23 @@ def create_connection():
         if not to_student:
             return jsonify({'success': False, 'error': 'To student not found'}), 404
         
-        # Check if connection already exists
-        if Connection.query.filter_by(from_student_id=from_id, to_student_id=to_id).first():
+        # Check if connection already exists -- friendship is treated as
+        # undirected everywhere else in the system (SNAEngine builds an
+        # nx.Graph(), not a DiGraph), so a connection in either direction
+        # between the same two students counts as a duplicate.
+        if Connection.query.filter(
+            db.or_(
+                db.and_(Connection.from_student_id == from_id, Connection.to_student_id == to_id),
+                db.and_(Connection.from_student_id == to_id, Connection.to_student_id == from_id),
+            )
+        ).first():
             return jsonify({'success': False, 'error': 'Connection already exists'}), 400
-        
-        strength = data.get('strength', 1)
-        if strength < 1 or strength > 5:
-            return jsonify({'success': False, 'error': 'Strength must be between 1-5'}), 400
+
+        strength = data.get('strength')
+        if strength is None:
+            strength = 1
+        if not isinstance(strength, int) or strength < 1 or strength > 5:
+            return jsonify({'success': False, 'error': 'Strength must be an integer between 1-5'}), 400
         
         connection = Connection(
             from_student_id=from_id,
@@ -125,9 +135,10 @@ def update_connection(connection_id):
         data = request.get_json()
         
         if 'strength' in data:
-            if data['strength'] < 1 or data['strength'] > 5:
-                return jsonify({'success': False, 'error': 'Strength must be between 1-5'}), 400
-            conn.strength = data['strength']
+            strength = data['strength']
+            if not isinstance(strength, int) or strength < 1 or strength > 5:
+                return jsonify({'success': False, 'error': 'Strength must be an integer between 1-5'}), 400
+            conn.strength = strength
         
         if 'relationship_type' in data:
             conn.relationship_type = data['relationship_type']
