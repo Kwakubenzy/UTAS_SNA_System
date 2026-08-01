@@ -268,6 +268,30 @@ class AuthService:
             return {'success': False, 'message': str(e)}
     
     @staticmethod
+    def set_active_status(user_id, is_active):
+        """Activate or deactivate a user account (admin only)"""
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return {'success': False, 'message': 'User not found'}
+
+            user.is_active = is_active
+            db.session.commit()
+
+            action = 'activated' if is_active else 'deactivated'
+            logger.info(f'User {action}: {user.username}')
+            return {
+                'success': True,
+                'message': f'User {action} successfully',
+                'user': user.to_dict()
+            }
+
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f'Set active status error: {str(e)}')
+            return {'success': False, 'message': str(e)}
+
+    @staticmethod
     def ensure_default_roles():
         """Ensure default roles exist"""
         roles_to_create = [

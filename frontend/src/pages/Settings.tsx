@@ -1,30 +1,88 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Settings as SettingsIcon, Save, Shield, BarChart3, Database, Info } from 'lucide-react';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, ThemeMode } from '../context/ThemeContext';
 import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Select } from '../components/ui/FormField';
+import { Modal } from '../components/ui/Modal';
+import { Select, Input, FieldWrapper } from '../components/ui/FormField';
+
+const SETTINGS_STORAGE_KEY = 'utas_sna_preferences';
+
+// There's no backend concept of per-user notification preferences (and no
+// migration tooling to safely add columns to the live User table -- see
+// Chapter 5 of the thesis), so these are real, persisted, but device-local
+// preferences rather than a synced-across-devices server setting.
+const loadStoredSettings = () => {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return { notifications_enabled: true, email_notifications: true, language: 'en' };
+    return { notifications_enabled: true, email_notifications: true, language: 'en', ...JSON.parse(raw) };
+  } catch {
+    return { notifications_enabled: true, email_notifications: true, language: 'en' };
+  }
+};
 
 export const Settings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const [settings, setSettings] = useState({ notifications_enabled: true, email_notifications: true, language: 'en' });
+  const navigate = useNavigate();
+  const [settings, setSettings] = useState(loadStoredSettings);
   const [loading, setLoading] = useState(false);
+  const [maintenanceRunning, setMaintenanceRunning] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const isAdmin = user?.role === 'admin';
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      // TODO: Implement API call to save settings (no /api/settings endpoint exists yet)
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      toast.success('Settings saved successfully');
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      toast.success('Settings saved on this device');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRunMaintenance = async () => {
+    setMaintenanceRunning(true);
+    try {
+      const response = await api.runAnalysis();
+      if (response.success) {
+        toast.success('Analysis metrics recomputed for all students');
+      } else {
+        toast.error(response.error || 'Failed to run maintenance');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to run maintenance');
+    } finally {
+      setMaintenanceRunning(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleting(true);
+    try {
+      const response = await api.deleteProfile(deletePassword);
+      if (response.success) {
+        toast.success('Account deleted');
+        await logout();
+        navigate('/login');
+      } else {
+        toast.error(response.message || 'Failed to delete account');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to delete account');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -146,11 +204,22 @@ export const Settings: React.FC = () => {
                 All systems operational
               </p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" icon={<BarChart3 className="h-3.5 w-3.5" />}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<BarChart3 className="h-3.5 w-3.5" />}
+                  onClick={() => navigate('/analysis')}
+                >
                   View System Stats
                 </Button>
-                <Button variant="secondary" size="sm" icon={<Database className="h-3.5 w-3.5" />}>
-                  Database Maintenance
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Database className="h-3.5 w-3.5" />}
+                  loading={maintenanceRunning}
+                  onClick={handleRunMaintenance}
+                >
+                  Recompute Analysis Metrics
                 </Button>
               </div>
             </CardBody>
@@ -169,7 +238,7 @@ export const Settings: React.FC = () => {
                   Permanently delete your account and all associated data. This action cannot be undone.
                 </p>
               </div>
-              <Button variant="danger" disabled>
+              <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
                 Delete Account
               </Button>
             </div>
@@ -182,6 +251,32 @@ export const Settings: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <Modal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Account">
+        <form onSubmit={handleDeleteAccount}>
+          <p className="mb-4 text-sm text-slate-500 dark:text-navy-300">
+            This permanently deletes your account. This cannot be undone. Enter your password to confirm.
+          </p>
+          <FieldWrapper label="Password" htmlFor="delete_password" required>
+            <Input
+              id="delete_password"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              required
+              autoFocus
+            />
+          </FieldWrapper>
+          <div className="mt-2 flex gap-3">
+            <Button type="submit" variant="danger" loading={deleting} className="flex-1">
+              Delete My Account
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </motion.div>
   );
 };

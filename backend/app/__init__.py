@@ -49,6 +49,10 @@ def create_app(config_name='development'):
     # Configuration
     if config_name == 'production':
         app.config['SQLALCHEMY_DATABASE_URI'] = _build_production_database_uri()
+    elif config_name == 'testing':
+        # In-memory DB, never touches the real sna_system.db file.
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        app.config['TESTING'] = True
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sna_system.db'
     

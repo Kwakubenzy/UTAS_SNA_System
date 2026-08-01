@@ -137,6 +137,11 @@ class ApiService {
     return response.data;
   }
 
+  async setUserStatus(userId: number, isActive: boolean): Promise<ProfileResponse> {
+    const response = await this.api.put(`/auth/users/${userId}/status`, { is_active: isActive });
+    return response.data;
+  }
+
   // Students endpoints
   async getStudents(filters?: StudentFilters): Promise<StudentsResponse> {
     const response = await this.api.get('/students', { params: filters });

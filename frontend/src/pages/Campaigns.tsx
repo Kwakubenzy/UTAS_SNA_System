@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Target, Plus, Trash2, Eye } from 'lucide-react';
+import { Target, Plus, Trash2, Eye, Pencil } from 'lucide-react';
 import api from '../services/api';
 import { useStudents } from '../hooks/useStudents';
-import { Campaign, CampaignStatus, CreateCampaignRequest, InfluencerResult, Party } from '../types';
+import { Campaign, CampaignStatus, CreateCampaignRequest, UpdateCampaignRequest, InfluencerResult, Party } from '../types';
+import { usePagination } from '../hooks/usePagination';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Card } from '../components/ui/Card';
 import { Badge, PartyBadge } from '../components/ui/Badge';
 import { Select, Input, Textarea, FieldWrapper } from '../components/ui/FormField';
+import { Pagination } from '../components/ui/Pagination';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 
@@ -48,6 +50,10 @@ export const Campaigns: React.FC = () => {
   const [recommendations, setRecommendations] = useState<CampaignRecommendations | null>(null);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
 
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [editForm, setEditForm] = useState<UpdateCampaignRequest>({});
+  const [editSaving, setEditSaving] = useState(false);
+
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
@@ -69,6 +75,7 @@ export const Campaigns: React.FC = () => {
   }, []);
 
   const filteredCampaigns = filterStatus === 'all' ? campaigns : campaigns.filter((c) => c.status === filterStatus);
+  const { page, setPage, pageCount, pageItems, totalItems, pageSize } = usePagination(filteredCampaigns, 9);
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +135,38 @@ export const Campaigns: React.FC = () => {
       setViewingCampaignId(null);
     } finally {
       setRecommendationsLoading(false);
+    }
+  };
+
+  const openEditModal = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setEditForm({
+      campaign_name: campaign.campaign_name,
+      description: campaign.description || '',
+      target_party: campaign.target_party || undefined,
+      status: campaign.status,
+    });
+  };
+
+  const handleUpdateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCampaign) return;
+
+    setEditSaving(true);
+    try {
+      const response = await api.updateCampaign(editingCampaign.id, editForm);
+      if (response.success && response.campaign) {
+        const updated = response.campaign;
+        setCampaigns((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        setEditingCampaign(null);
+        toast.success('Campaign updated');
+      } else {
+        toast.error(response.error || 'Failed to update campaign');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || err.message || 'Failed to update campaign');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -193,33 +232,39 @@ export const Campaigns: React.FC = () => {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredCampaigns.map((campaign) => (
-            <Card key={campaign.id} className="flex flex-col p-5">
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-navy-900 dark:text-white">{campaign.campaign_name}</h3>
-                <Badge tone={STATUS_TONE[campaign.status]}>
-                  {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-                </Badge>
-              </div>
-              <p className="mb-3 flex-1 whitespace-pre-line text-sm text-slate-500 dark:text-navy-300">
-                {campaign.description || 'No description'}
-              </p>
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-400 dark:text-navy-400">
-                {campaign.target_party && <PartyBadge party={campaign.target_party} />}
-                <span>{new Date(campaign.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="mt-auto flex gap-2 border-t border-slate-100 pt-3 dark:border-navy-700">
-                <Button variant="secondary" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => handleViewRecommendations(campaign)}>
-                  View
-                </Button>
-                <Button variant="danger" size="sm" icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => handleDelete(campaign.id)}>
-                  Delete
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {pageItems.map((campaign) => (
+              <Card key={campaign.id} className="flex flex-col p-5">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-navy-900 dark:text-white">{campaign.campaign_name}</h3>
+                  <Badge tone={STATUS_TONE[campaign.status]}>
+                    {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                  </Badge>
+                </div>
+                <p className="mb-3 flex-1 whitespace-pre-line text-sm text-slate-500 dark:text-navy-300">
+                  {campaign.description || 'No description'}
+                </p>
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-400 dark:text-navy-400">
+                  {campaign.target_party && <PartyBadge party={campaign.target_party} />}
+                  <span>{new Date(campaign.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="mt-auto flex flex-wrap gap-2 border-t border-slate-100 pt-3 dark:border-navy-700">
+                  <Button variant="secondary" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => handleViewRecommendations(campaign)}>
+                    View
+                  </Button>
+                  <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />} onClick={() => openEditModal(campaign)}>
+                    Edit
+                  </Button>
+                  <Button variant="danger" size="sm" icon={<Trash2 className="h-3.5 w-3.5" />} onClick={() => handleDelete(campaign.id)}>
+                    Delete
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <Pagination page={page} pageCount={pageCount} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
+        </>
       )}
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Create Campaign">
@@ -275,6 +320,61 @@ export const Campaigns: React.FC = () => {
               Create Campaign
             </Button>
             <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={editingCampaign !== null} onClose={() => setEditingCampaign(null)} title="Edit Campaign">
+        <form onSubmit={handleUpdateCampaign}>
+          <FieldWrapper label="Campaign name" htmlFor="edit_campaign_name" required>
+            <Input
+              id="edit_campaign_name"
+              value={editForm.campaign_name || ''}
+              onChange={(e) => setEditForm({ ...editForm, campaign_name: e.target.value })}
+              required
+            />
+          </FieldWrapper>
+
+          <FieldWrapper label="Description" htmlFor="edit_description">
+            <Textarea
+              id="edit_description"
+              rows={6}
+              value={editForm.description || ''}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+            />
+          </FieldWrapper>
+
+          <FieldWrapper label="Target party" htmlFor="edit_target_party">
+            <Select
+              id="edit_target_party"
+              value={editForm.target_party || ''}
+              onChange={(e) => setEditForm({ ...editForm, target_party: (e.target.value as Party) || undefined })}
+            >
+              <option value="">No target party</option>
+              <option value="TESCON">TESCON</option>
+              <option value="TEIN">TEIN</option>
+            </Select>
+          </FieldWrapper>
+
+          <FieldWrapper label="Status" htmlFor="edit_status">
+            <Select
+              id="edit_status"
+              value={editForm.status || 'planning'}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value as CampaignStatus })}
+            >
+              <option value="planning">Planning</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </Select>
+          </FieldWrapper>
+
+          <div className="mt-2 flex gap-3">
+            <Button type="submit" loading={editSaving} className="flex-1">
+              Save Changes
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => setEditingCampaign(null)}>
               Cancel
             </Button>
           </div>

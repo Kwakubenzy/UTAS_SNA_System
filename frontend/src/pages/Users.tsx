@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Search, UserCog, TriangleAlert } from 'lucide-react';
+import { Search, UserCog } from 'lucide-react';
 import api from '../services/api';
 import { User } from '../types';
 import { usePagination } from '../hooks/usePagination';
@@ -63,12 +63,20 @@ export const Users: React.FC = () => {
     }
   };
 
-  const handleDeactivate = (userId: number) => {
-    if (!window.confirm('Deactivate this user?')) return;
-    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: false } : u)));
-    toast('Deactivation is local-only — no backend endpoint exists for this yet.', {
-      icon: <TriangleAlert className="h-4 w-4 text-amber-500" />,
-    });
+  const handleToggleActive = async (userId: number, currentlyActive: boolean) => {
+    const nextActive = !currentlyActive;
+    if (!window.confirm(nextActive ? 'Reactivate this user?' : 'Deactivate this user?')) return;
+    try {
+      const response = await api.setUserStatus(userId, nextActive);
+      if (response.success) {
+        setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, is_active: nextActive } : u)));
+        toast.success(nextActive ? 'User reactivated' : 'User deactivated');
+      } else {
+        toast.error(response.error || response.message || 'Failed to update user status');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to update user status');
+    }
   };
 
   return (
@@ -152,11 +160,14 @@ export const Users: React.FC = () => {
                       <td className="px-5 py-3 text-slate-500 dark:text-navy-300">{new Date(user.created_at).toLocaleDateString()}</td>
                       <td className="px-5 py-3 text-right">
                         <button
-                          onClick={() => handleDeactivate(user.id)}
-                          disabled={!user.is_active}
-                          className="rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-500/10"
+                          onClick={() => handleToggleActive(user.id, user.is_active)}
+                          className={
+                            user.is_active
+                              ? 'rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10'
+                              : 'rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10'
+                          }
                         >
-                          {user.is_active ? 'Deactivate' : 'Deactivated'}
+                          {user.is_active ? 'Deactivate' : 'Reactivate'}
                         </button>
                       </td>
                     </tr>

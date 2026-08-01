@@ -342,6 +342,24 @@ def assign_role(user_id):
         return jsonify({'success': False, 'message': 'Role assignment failed'}), 500
 
 
+@auth_bp.route('/users/<int:user_id>/status', methods=['PUT'])
+@admin_required
+def set_user_status(user_id):
+    """Activate or deactivate a user account (admin only)"""
+    try:
+        data = request.get_json()
+
+        if 'is_active' not in data or not isinstance(data['is_active'], bool):
+            return jsonify({'success': False, 'message': 'is_active (boolean) required'}), 400
+
+        result = AuthService.set_active_status(user_id, data['is_active'])
+        return jsonify(result), 200 if result['success'] else 400
+
+    except Exception as e:
+        logger.error(f'Set user status error: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to update user status'}), 500
+
+
 @auth_bp.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
