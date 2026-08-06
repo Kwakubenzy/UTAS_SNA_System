@@ -56,6 +56,22 @@ def test_update_and_delete_student(client, admin_token):
     assert resp.status_code == 404
 
 
+def test_deleting_student_also_deletes_their_connections(client, admin_token, app):
+    a = client.post('/api/students/', json=STUDENT_PAYLOAD, headers=auth_header(admin_token)).get_json()['student']
+    b = client.post('/api/students/', json={**STUDENT_PAYLOAD, 'student_id': 'S002', 'name': 'Kojo Owusu'},
+                     headers=auth_header(admin_token)).get_json()['student']
+    conn = client.post('/api/connections/', json={
+        'from_student_id': a['id'], 'to_student_id': b['id'],
+    }, headers=auth_header(admin_token)).get_json()['connection']
+
+    resp = client.delete(f"/api/students/{a['id']}", headers=auth_header(admin_token))
+    assert resp.status_code == 200
+
+    with app.app_context():
+        from app.models import Connection
+        assert Connection.query.get(conn['id']) is None
+
+
 def test_student_stats_summary(client, admin_token):
     client.post('/api/students/', json=STUDENT_PAYLOAD, headers=auth_header(admin_token))
     resp = client.get('/api/students/stats/summary', headers=auth_header(admin_token))

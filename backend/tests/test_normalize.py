@@ -42,6 +42,16 @@ def test_bsc_and_bed_mathematics_stay_distinct_from_each_other():
     assert normalize_department('Bsc Mathematics') != normalize_department('Bed Mathematics')
 
 
+def test_stray_colon_after_prefix_stripped():
+    assert normalize_department('Bsc : Computer Science') == 'Bsc Computer Science'
+    assert normalize_department('Bsc : Information Technology') == 'Bsc Information Technology'
+
+
+def test_redundant_bachelor_phrase_stripped():
+    assert normalize_department('Bsc Bachelor In Computer Science') == 'Bsc Computer Science'
+    assert normalize_department('Bsc Bachelor Of Science In Information Technology') == 'Bsc Information Technology'
+
+
 def test_blank_and_none_return_none():
     assert normalize_department(None) is None
     assert normalize_department('') is None

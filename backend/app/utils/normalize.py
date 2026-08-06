@@ -29,7 +29,9 @@ def normalize_department(raw):
     """
     if not raw or not str(raw).strip():
         return None
-    text = str(raw).lower().replace('.', '').strip()
+    # Strip stray punctuation some respondents put right after the degree
+    # prefix ("Bsc : Computer Science", "Bsc, Computer Science").
+    text = str(raw).lower().replace('.', '').replace(':', ' ').replace(',', ' ').strip()
     text = re.sub(r'\s+', ' ', text).strip()
 
     # The optional leading "(bsc )?" here also repairs the one-time artifact
@@ -42,6 +44,12 @@ def normalize_department(raw):
     else:
         prefix = 'Bsc'
         subject = re.sub(r'^b\s?sc\s*(in\s+)?', '', text).strip()
+
+    # Some respondents redundantly spell the degree out even after already
+    # writing "Bsc"/"Bed" ("Bsc Bachelor In Computer Science", "Bsc
+    # Bachelor Of Science In Information Technology") -- strip the
+    # redundant phrase rather than keeping it as part of the subject.
+    subject = re.sub(r'^bachelor(\s+of\s+(science|education))?\s*(in\s+)?', '', subject).strip()
 
     subject = _SUBJECT_ALIASES.get(subject, subject)
     if not subject:
