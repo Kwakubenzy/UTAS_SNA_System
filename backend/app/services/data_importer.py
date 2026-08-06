@@ -23,6 +23,9 @@ SURVEY_COLUMN_MAP = {
     'from_regional_capital': 'your regional capital',
     'from_hometown': 'your hometown',
     'from_district': 'your district name',
+    'from_party': 'political party',
+    'from_college': 'college',
+    'from_year': 'year of study',
     'to_gender': 'your friend gender',
     'to_department': 'your friend program of study',
     'to_religion': 'your friend religion',
@@ -30,7 +33,34 @@ SURVEY_COLUMN_MAP = {
     'to_tribe': 'your friend tribe',
     'to_hometown': 'your friend hometown',
     'to_district': 'district name of your friend',
+    'to_party': 'your friend political party',
+    'to_college': 'your friend college',
+    'to_year': 'your friend year of study',
 }
+
+
+def _clean_party(value):
+    """Normalize a free-typed party answer to TESCON/TEIN, or None if it
+    doesn't recognizably match either -- survey answers are typed by
+    hundreds of different respondents, so this stays forgiving rather than
+    rejecting the whole row over a stray typo in an optional field."""
+    if value is None:
+        return None
+    text = str(value).strip().upper()
+    if text in ('TESCON', 'TEIN'):
+        return text
+    return None
+
+
+def _clean_year(value):
+    """Normalize a free-typed year-of-study answer to an int 1-4, or None."""
+    if value is None:
+        return None
+    try:
+        year = int(str(value).strip())
+    except ValueError:
+        return None
+    return year if 1 <= year <= 4 else None
 
 
 def _normalize_column(col):
@@ -195,15 +225,19 @@ class DataImporter:
         Process a friendship-survey DataFrame (respondent -> named friend per row).
 
         Expected columns (see SURVEY_COLUMN_MAP): Name of respondent, Gender,
-        Program of study, Name of your friend in CSC104 class, Your friend gender,
+        Program of study, Name of your friend, Your friend gender,
         Your friend program of study, Respondent Religion, Tribe,
         Your regional capital, Your hometown, Your District Name,
-        Your friend Religion, Your friend regional capital, Your friend tribe,
-        Your friend hometown, District name of your friend.
+        Political Party, College, Year of Study, Your friend Religion,
+        Your friend regional capital, Your friend tribe, Your friend hometown,
+        District name of your friend, Your friend political party,
+        Your friend college, Your friend year of study.
 
-        There are no student IDs or party/college/year in this format, so students
-        are matched/created by name (case-insensitive) and those fields are left
-        blank.
+        There are no student IDs in this format, so students are
+        matched/created by name (case-insensitive) and get an
+        auto-generated SVY-XXXXXXXX id instead. Party/college/year are
+        optional; unrecognized or missing answers are left blank rather
+        than rejecting the row, since they're supplementary here.
         """
         try:
             valid_rows = 0
@@ -233,6 +267,9 @@ class DataImporter:
                         regional_capital=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_regional_capital'])),
                         hometown=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_hometown'])),
                         district=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_district'])),
+                        party=_clean_party(row.get(SURVEY_COLUMN_MAP['from_party'])),
+                        college=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_college'])),
+                        year=_clean_year(row.get(SURVEY_COLUMN_MAP['from_year'])),
                     )
                     to_student = DataImporter._get_or_create_student_by_name(
                         name_cache, to_name,
@@ -243,6 +280,9 @@ class DataImporter:
                         regional_capital=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_regional_capital'])),
                         hometown=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_hometown'])),
                         district=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_district'])),
+                        party=_clean_party(row.get(SURVEY_COLUMN_MAP['to_party'])),
+                        college=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_college'])),
+                        year=_clean_year(row.get(SURVEY_COLUMN_MAP['to_year'])),
                     )
 
                     if from_student.id == to_student.id:
