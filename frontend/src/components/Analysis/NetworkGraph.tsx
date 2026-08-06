@@ -12,6 +12,11 @@ interface GraphNode {
   college: string | null;
   department: string | null;
   year: number | null;
+  tribe: string | null;
+  religion: string | null;
+  hometown: string | null;
+  district: string | null;
+  regional_capital: string | null;
   community_id: number;
   influence_tier: string;
   degree_centrality: number;
@@ -20,6 +25,36 @@ interface GraphNode {
   x?: number;
   y?: number;
 }
+
+/** Attribute-based grouping modes -- each colors/legends the graph by a
+ *  shared student attribute, so students from the same hometown, tribe,
+ *  etc. visually cluster within the one main network rather than needing
+ *  separate graphs per attribute. */
+type AttributeMode = 'department' | 'tribe' | 'religion' | 'hometown' | 'district' | 'regional_capital';
+type ColorMode = 'party' | 'community' | AttributeMode;
+
+const ATTRIBUTE_LABELS: Record<AttributeMode, string> = {
+  department: 'Department',
+  tribe: 'Tribe',
+  religion: 'Religion',
+  hometown: 'Hometown',
+  district: 'District',
+  regional_capital: 'Regional Capital',
+};
+
+/** Free-text survey answers vary in casing/whitespace ("accra", "Accra ",
+ *  "ACCRA") even when they mean the same value -- collapse those together
+ *  for grouping/display. Department gets its own, more involved
+ *  normalization server-side (see backend/app/utils/normalize.py), since
+ *  it also has to reconcile degree-prefix variants ("Bsc", "B.Ed", none at
+ *  all); this one just handles plain casing/whitespace for the rest. */
+const normalizeLabel = (raw: string | null): string => {
+  if (!raw || !raw.trim()) return 'Unspecified';
+  const collapsed = raw.trim().replace(/\s+/g, ' ');
+  return collapsed.replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+const attributeValue = (node: GraphNode, mode: AttributeMode): string => normalizeLabel(node[mode]);
 
 interface GraphLink {
   source: number;
@@ -41,20 +76,6 @@ const CATEGORICAL_LIGHT = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a'
 const CATEGORICAL_DARK = ['#3987e5', '#008300', '#d55181', '#c98500', '#199e70', '#d95926', '#9085e9', '#e66767'];
 
 const partyColor = (node: GraphNode) => (node.party ? PARTY_COLORS[node.party] || NEUTRAL_COLOR : NEUTRAL_COLOR);
-
-/** Survey respondents typed their own department in free text, so the same
- *  department shows up as "BSC Information Technology", "Bsc. information
- *  technology", "Information Technology", etc. Collapse the common "Bsc"
- *  prefix and casing/punctuation differences so those all bucket together
- *  instead of fragmenting into a dozen near-duplicate colors. */
-const normalizeDepartment = (raw: string | null): string => {
-  if (!raw || !raw.trim()) return 'Unspecified';
-  let s = raw.toLowerCase().replace(/\./g, '').trim();
-  s = s.replace(/^b\s?sc\s*(in\s+)?/i, '');
-  s = s.replace(/\s+/g, ' ').trim();
-  if (!s) return 'Unspecified';
-  return s.replace(/\b\w/g, (c) => c.toUpperCase());
-};
 
 /** Assigns each distinct value a stable slot index (0-7), giving real colors to
  *  the most frequent values first so the biggest groups stand out rather than
@@ -97,7 +118,7 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-  const [colorMode, setColorMode] = useState<'party' | 'community' | 'department'>('department');
+  const [colorMode, setColorMode] = useState<ColorMode>('department');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
   const [partyFilter, setPartyFilter] = useState('all');
@@ -168,10 +189,15 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
     return buildColorMap(ids);
   }, [graphData]);
 
-  const departmentColorMap = useMemo(() => {
-    const names = (graphData?.nodes || []).map((n) => normalizeDepartment(n.department));
-    return buildColorMap(names);
-  }, [graphData]);
+  /** One shared color map for whichever attribute mode is currently active
+   *  (department/tribe/religion/hometown/district/regional_capital) --
+   *  recomputed only when the graph data or the selected attribute
+   *  changes, rather than keeping six near-identical maps around. */
+  const attributeColorMap = useMemo(() => {
+    if (colorMode === 'party' || colorMode === 'community') return new Map<string, number>();
+    const values = (graphData?.nodes || []).map((n) => attributeValue(n, colorMode));
+    return buildColorMap(values);
+  }, [graphData, colorMode]);
 
   const communityColor = useCallback(
     (node: GraphNode) => {
@@ -182,21 +208,21 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
     [communityColorMap, palette]
   );
 
-  const departmentColor = useCallback(
-    (node: GraphNode) => {
-      const idx = departmentColorMap.get(normalizeDepartment(node.department));
+  const attributeColor = useCallback(
+    (node: GraphNode, mode: AttributeMode) => {
+      const idx = attributeColorMap.get(attributeValue(node, mode));
       return idx !== undefined && idx >= 0 ? palette[idx] : NEUTRAL_COLOR;
     },
-    [departmentColorMap, palette]
+    [attributeColorMap, palette]
   );
 
   const nodeColor = useCallback(
     (node: GraphNode) => {
       if (colorMode === 'community') return communityColor(node);
-      if (colorMode === 'department') return departmentColor(node);
-      return partyColor(node);
+      if (colorMode === 'party') return partyColor(node);
+      return attributeColor(node, colorMode);
     },
-    [colorMode, communityColor, departmentColor]
+    [colorMode, communityColor, attributeColor]
   );
 
   const communityLegend = useMemo(() => {
@@ -209,19 +235,20 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
     return entries;
   }, [communityColorMap, palette]);
 
-  const departmentLegend = useMemo(() => {
-    const entries = Array.from(departmentColorMap.entries())
+  const attributeLegend = useMemo(() => {
+    if (colorMode === 'party' || colorMode === 'community') return [];
+    const entries = Array.from(attributeColorMap.entries())
       .filter(([, idx]) => idx >= 0)
       .sort((a, b) => a[1] - b[1])
       .map(([name, idx]) => ({ label: name, color: palette[idx] }));
-    const hasOther = Array.from(departmentColorMap.values()).some((idx) => idx === -1);
-    if (hasOther) entries.push({ label: 'Other departments', color: NEUTRAL_COLOR });
+    const hasOther = Array.from(attributeColorMap.values()).some((idx) => idx === -1);
+    if (hasOther) entries.push({ label: `Other (${ATTRIBUTE_LABELS[colorMode].toLowerCase()})`, color: NEUTRAL_COLOR });
     return entries;
-  }, [departmentColorMap, palette]);
+  }, [attributeColorMap, palette, colorMode]);
 
   /** Edges take the colour of their source node, so a connection visually
    *  belongs to whichever cluster is currently being highlighted (party,
-   *  community, or department) instead of a fixed hue. */
+   *  community, or an attribute) instead of a fixed hue. */
   const nodeColorById = useMemo(() => {
     const map = new Map<number, string>();
     (graphData?.nodes || []).forEach((n) => map.set(n.id, nodeColor(n)));
@@ -399,8 +426,9 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: entry.color }} /> {entry.label}
               </span>
             ))}
-          {colorMode === 'department' &&
-            departmentLegend.map((entry) => (
+          {colorMode !== 'party' &&
+            colorMode !== 'community' &&
+            attributeLegend.map((entry) => (
               <span key={entry.label} className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: entry.color }} /> {entry.label}
               </span>
@@ -410,41 +438,22 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
           </span>
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 text-xs font-medium dark:bg-navy-800">
-          <button
-            type="button"
-            onClick={() => setColorMode('party')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              colorMode === 'party'
-                ? 'bg-white text-blue-600 shadow-sm dark:bg-navy-700 dark:text-blue-400'
-                : 'text-slate-500 hover:text-navy-700 dark:text-navy-300 dark:hover:text-white'
-            }`}
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-navy-300">
+          Color by
+          <select
+            value={colorMode}
+            onChange={(e) => setColorMode(e.target.value as ColorMode)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-navy-700 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/15 dark:border-navy-600 dark:bg-navy-800 dark:text-navy-100"
           >
-            Color by party
-          </button>
-          <button
-            type="button"
-            onClick={() => setColorMode('community')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              colorMode === 'community'
-                ? 'bg-white text-blue-600 shadow-sm dark:bg-navy-700 dark:text-blue-400'
-                : 'text-slate-500 hover:text-navy-700 dark:text-navy-300 dark:hover:text-white'
-            }`}
-          >
-            Color by community
-          </button>
-          <button
-            type="button"
-            onClick={() => setColorMode('department')}
-            className={`rounded-md px-2.5 py-1 transition-colors ${
-              colorMode === 'department'
-                ? 'bg-white text-blue-600 shadow-sm dark:bg-navy-700 dark:text-blue-400'
-                : 'text-slate-500 hover:text-navy-700 dark:text-navy-300 dark:hover:text-white'
-            }`}
-          >
-            Color by department
-          </button>
-        </div>
+            <option value="party">Political party</option>
+            <option value="community">Detected community</option>
+            {(Object.keys(ATTRIBUTE_LABELS) as AttributeMode[]).map((mode) => (
+              <option key={mode} value={mode}>
+                {ATTRIBUTE_LABELS[mode]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-navy-700 dark:text-navy-300">
@@ -490,6 +499,11 @@ export const NetworkGraph: React.FC<NetworkGraphProps> = ({ height = 620 }) => {
             {selectedNode.community_id >= 0 ? selectedNode.community_id : 'none'} &middot; {selectedNode.influence_tier}{' '}
             influence &middot; PageRank {selectedNode.pagerank_score.toFixed(4)}
             {selectedNode.bridge_node && ' · Bridge node'}
+          </p>
+          <p className="mt-1 text-xs text-slate-400 dark:text-navy-400">
+            {[selectedNode.tribe, selectedNode.religion, selectedNode.hometown, selectedNode.district, selectedNode.regional_capital]
+              .filter(Boolean)
+              .join(' · ') || 'No tribe/religion/hometown data'}
           </p>
         </div>
       )}

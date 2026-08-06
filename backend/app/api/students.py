@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, Student
 from app.utils.decorators import token_required, campaign_manager_required
+from app.utils.normalize import normalize_department
 from app.services.activity_service import ActivityService
 import logging
 
@@ -88,7 +89,7 @@ def create_student():
             tribe=data.get('tribe'),
             party=data['party'],
             college=data['college'],
-            department=data['department'],
+            department=normalize_department(data['department']),
             year=data['year'],
             email=data.get('email'),
             phone=data.get('phone')
@@ -132,7 +133,7 @@ def update_student(student_id):
         if 'college' in data:
             student.college = data['college']
         if 'department' in data:
-            student.department = data['department']
+            student.department = normalize_department(data['department'])
         if 'year' in data:
             student.year = data['year']
         if 'email' in data:

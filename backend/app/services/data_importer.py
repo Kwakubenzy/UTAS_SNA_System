@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import uuid
 from app.models import db, Student, Connection
+from app.utils.normalize import normalize_department
 import logging
 
 logger = logging.getLogger(__name__)
@@ -261,7 +262,7 @@ class DataImporter:
                     from_student = DataImporter._get_or_create_student_by_name(
                         name_cache, from_name,
                         gender=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_gender'])),
-                        department=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_department'])),
+                        department=normalize_department(row.get(SURVEY_COLUMN_MAP['from_department'])),
                         religion=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_religion'])),
                         tribe=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_tribe'])),
                         regional_capital=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_regional_capital'])),
@@ -274,7 +275,7 @@ class DataImporter:
                     to_student = DataImporter._get_or_create_student_by_name(
                         name_cache, to_name,
                         gender=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_gender'])),
-                        department=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_department'])),
+                        department=normalize_department(row.get(SURVEY_COLUMN_MAP['to_department'])),
                         religion=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_religion'])),
                         tribe=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_tribe'])),
                         regional_capital=DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_regional_capital'])),
@@ -359,7 +360,7 @@ class DataImporter:
                             tribe=str(row.get('from_tribe', '')),
                             party=str(row['from_party']),
                             college=str(row['from_college']),
-                            department=str(row['from_department']),
+                            department=normalize_department(row['from_department']),
                             year=int(row['from_year'])
                         )
                         db.session.add(from_student)
@@ -374,7 +375,7 @@ class DataImporter:
                             tribe=str(row.get('to_tribe', '')),
                             party=str(row['to_party']),
                             college=str(row['to_college']),
-                            department=str(row['to_department']),
+                            department=normalize_department(row['to_department']),
                             year=int(row['to_year'])
                         )
                         db.session.add(to_student)
