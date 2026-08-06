@@ -21,7 +21,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.models import db, Student, Connection
+from app.models import db, Student
 
 NON_ANSWER_MARKERS = ["don't", 'dont', 'none', 'n/a', 'no friend', 'nobody', 'not applicable', 'no one']
 
@@ -35,14 +35,13 @@ TYPO_FIXES = {
 
 
 def remove_non_answer_students():
+    """Connection/NetworkMetric rows cascade-delete automatically via the
+    Student model's relationship cascade -- see app/models/__init__.py."""
     removed = 0
     for student in Student.query.all():
         name = student.name.strip().lower()
         if len(name.split()) > 5 or any(marker in name for marker in NON_ANSWER_MARKERS):
             print(f"  Removing bogus student: {student.name!r} (id={student.id})")
-            Connection.query.filter(
-                db.or_(Connection.from_student_id == student.id, Connection.to_student_id == student.id)
-            ).delete(synchronize_session=False)
             db.session.delete(student)
             removed += 1
     db.session.commit()

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, Student, Connection
+from app.models import db, Student
 from app.utils.decorators import token_required, campaign_manager_required
 from app.utils.normalize import normalize_department
 from app.services.activity_service import ActivityService
@@ -166,15 +166,8 @@ def delete_student(student_id):
 
         student_name, student_number = student.name, student.student_id
 
-        # Deleting a Student doesn't cascade to its Connection rows on its
-        # own (no cascade='delete' on the relationship), which would
-        # otherwise leave orphaned connections pointing at a student that
-        # no longer exists -- silently corrupting the graph the next time
-        # analysis runs.
-        Connection.query.filter(
-            db.or_(Connection.from_student_id == student_id, Connection.to_student_id == student_id)
-        ).delete(synchronize_session=False)
-
+        # Connection/NetworkMetric rows cascade-delete automatically via the
+        # Student model's relationship cascade -- see app/models/__init__.py.
         db.session.delete(student)
         db.session.commit()
 

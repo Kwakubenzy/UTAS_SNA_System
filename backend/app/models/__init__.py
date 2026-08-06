@@ -112,10 +112,21 @@ class Student(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
-    connections_from = db.relationship('Connection', foreign_keys='Connection.from_student_id', backref='from_student_rel')
-    connections_to = db.relationship('Connection', foreign_keys='Connection.to_student_id', backref='to_student_rel')
-    metrics = db.relationship('NetworkMetric', backref='student', uselist=False)
+    # Relationships. cascade='all, delete-orphan' so deleting a Student also
+    # deletes their connections/metrics, in every deletion path (API route,
+    # one-off scripts, admin tooling) -- without it, SQLAlchemy's default
+    # behavior on delete is to try nulling the child's foreign key instead,
+    # which fails outright for NetworkMetric.student_id (NOT NULL) and
+    # silently orphans rows for Connection (no NOT NULL to catch it).
+    connections_from = db.relationship(
+        'Connection', foreign_keys='Connection.from_student_id', backref='from_student_rel',
+        cascade='all, delete-orphan',
+    )
+    connections_to = db.relationship(
+        'Connection', foreign_keys='Connection.to_student_id', backref='to_student_rel',
+        cascade='all, delete-orphan',
+    )
+    metrics = db.relationship('NetworkMetric', backref='student', uselist=False, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Student {self.student_id}: {self.name}>'

@@ -72,6 +72,28 @@ def test_deleting_student_also_deletes_their_connections(client, admin_token, ap
         assert Connection.query.get(conn['id']) is None
 
 
+def test_deleting_student_with_network_metrics_does_not_500(client, admin_token, app):
+    """Regression test: NetworkMetric.student_id is NOT NULL, and the
+    Student<->NetworkMetric relationship had no delete cascade, so deleting
+    a student who'd already been through analysis (i.e. has a NetworkMetric
+    row) raised an IntegrityError instead of actually deleting them --
+    SQLAlchemy's default behavior on delete is to null the child's foreign
+    key, which this column rejects."""
+    created = client.post('/api/students/', json=STUDENT_PAYLOAD, headers=auth_header(admin_token)).get_json()['student']
+
+    with app.app_context():
+        from app.models import db, NetworkMetric
+        db.session.add(NetworkMetric(student_id=created['id'], degree_centrality=0.5))
+        db.session.commit()
+
+    resp = client.delete(f"/api/students/{created['id']}", headers=auth_header(admin_token))
+    assert resp.status_code == 200
+
+    with app.app_context():
+        from app.models import NetworkMetric
+        assert NetworkMetric.query.filter_by(student_id=created['id']).first() is None
+
+
 def test_student_stats_summary(client, admin_token):
     client.post('/api/students/', json=STUDENT_PAYLOAD, headers=auth_header(admin_token))
     resp = client.get('/api/students/stats/summary', headers=auth_header(admin_token))
