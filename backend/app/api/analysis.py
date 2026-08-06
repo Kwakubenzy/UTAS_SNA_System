@@ -163,6 +163,8 @@ def get_top_influencers():
         result = []
         for metric in metrics:
             student = Student.query.get(metric.student_id)
+            if not student:
+                continue  # orphaned metric row (student was deleted); skip rather than crash
             result.append({
                 'student': student.to_dict(),
                 'metrics': metric.to_dict()
@@ -196,9 +198,10 @@ def get_communities():
         for community_id, size in communities:
             community_metrics = NetworkMetric.query.filter_by(community_id=community_id).all()
             
-            # Get students in this community
-            students = [Student.query.get(m.student_id) for m in community_metrics]
-            
+            # Get students in this community -- filter out orphaned metric
+            # rows (student deleted) rather than crashing on a None below.
+            students = [s for s in (Student.query.get(m.student_id) for m in community_metrics) if s]
+
             # Get party breakdown
             tescon_count = sum(1 for s in students if s.party == 'TESCON')
             tein_count = sum(1 for s in students if s.party == 'TEIN')
@@ -253,6 +256,8 @@ def get_centrality(metric_type):
         result = []
         for metric in metrics:
             student = Student.query.get(metric.student_id)
+            if not student:
+                continue  # orphaned metric row (student was deleted); skip rather than crash
             result.append({
                 'student': student.to_dict(),
                 'score': getattr(metric, f'{metric_type}_centrality' if metric_type != 'pagerank' else 'pagerank_score')
@@ -280,6 +285,8 @@ def get_bridge_nodes():
         result = []
         for metric in bridges:
             student = Student.query.get(metric.student_id)
+            if not student:
+                continue  # orphaned metric row (student was deleted); skip rather than crash
             result.append({
                 'student': student.to_dict(),
                 'betweenness_centrality': metric.betweenness_centrality,
