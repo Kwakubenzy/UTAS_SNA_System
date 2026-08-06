@@ -23,7 +23,6 @@ SURVEY_COLUMN_MAP = {
     'from_regional_capital': 'your regional capital',
     'from_hometown': 'your hometown',
     'from_district': 'your district name',
-    'to_name': 'name of your friend in csc104 class',
     'to_gender': 'your friend gender',
     'to_department': 'your friend program of study',
     'to_religion': 'your friend religion',
@@ -147,6 +146,17 @@ class DataImporter:
         )
 
     @staticmethod
+    def _find_friend_name_column(columns):
+        """The friend's-name question varies by course/cohort (e.g. 'Name of
+        your friend in CSC104 class...'), so match by substring instead of
+        a hardcoded exact phrase -- any column starting with 'name of your
+        friend' works, whatever comes after it."""
+        for c in columns:
+            if c.startswith('name of your friend'):
+                return c
+        return None
+
+    @staticmethod
     def _clean(value):
         """Convert a pandas cell to a plain string, or None if empty/NaN"""
         if value is None or (isinstance(value, float) and pd.isna(value)) or pd.isna(value):
@@ -200,9 +210,11 @@ class DataImporter:
             invalid_rows = []
             name_cache = {}
 
+            to_name_col = DataImporter._find_friend_name_column(df.columns)
+
             for idx, row in df.iterrows():
                 from_name = DataImporter._clean(row.get(SURVEY_COLUMN_MAP['from_name']))
-                to_name = DataImporter._clean(row.get(SURVEY_COLUMN_MAP['to_name']))
+                to_name = DataImporter._clean(row.get(to_name_col)) if to_name_col else None
 
                 if not from_name:
                     invalid_rows.append({'row': idx + 2, 'error': 'Missing respondent name'})
