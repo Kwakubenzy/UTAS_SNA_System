@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const isCampaignManager = user?.role === 'campaign_manager';
 
   const linkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors ${
+    `flex items-center gap-3.5 rounded-lg px-4 py-3 text-[15px] font-medium transition-colors ${
       isActive
         ? 'bg-[#1E3A8A] text-white'
         : 'text-navy-300 hover:bg-navy-800 hover:text-white'
@@ -69,22 +69,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        <p className="px-3.5 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-navy-500">Main</p>
+      <nav className="flex-1 space-y-1.5 overflow-y-auto px-3.5 py-5">
+        <p className="px-4 pb-2.5 pt-1 text-xs font-semibold uppercase tracking-wider text-navy-500">Main</p>
         {PRIMARY_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} className={linkClasses} onClick={onClose}>
-            <Icon className="h-[18px] w-[18px] shrink-0" />
+            <Icon className="h-5 w-5 shrink-0" />
             {label}
           </NavLink>
         ))}
 
         {(isCampaignManager || isAdmin) && (
           <>
-            <p className="px-3.5 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-wider text-navy-500">
+            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-navy-500">
               Campaigns
             </p>
             <NavLink to="/campaigns" className={linkClasses} onClick={onClose}>
-              <Target className="h-[18px] w-[18px] shrink-0" />
+              <Target className="h-5 w-5 shrink-0" />
               Campaigns
             </NavLink>
           </>
@@ -92,30 +92,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
 
         {isAdmin && (
           <>
-            <p className="px-3.5 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-wider text-navy-500">
+            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-navy-500">
               Administration
             </p>
             <NavLink to="/users" className={linkClasses} onClick={onClose}>
-              <UserCog className="h-[18px] w-[18px] shrink-0" />
+              <UserCog className="h-5 w-5 shrink-0" />
               Users
             </NavLink>
           </>
         )}
       </nav>
 
-      <div className="space-y-1 border-t border-navy-800 px-3 py-4">
+      <div className="space-y-1.5 border-t border-navy-800 px-3.5 py-5">
         <NavLink to="/settings" className={linkClasses} onClick={onClose}>
-          <SettingsIcon className="h-[18px] w-[18px] shrink-0" />
+          <SettingsIcon className="h-5 w-5 shrink-0" />
           Settings
         </NavLink>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-navy-300 transition-colors hover:bg-navy-800 hover:text-white"
+          className="flex w-full items-center gap-3.5 rounded-lg px-4 py-3 text-[15px] font-medium text-navy-300 transition-colors hover:bg-navy-800 hover:text-white"
         >
-          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          <LogOut className="h-5 w-5 shrink-0" />
           Logout
         </button>
-        <p className="px-3.5 pt-3 text-[11px] text-navy-500">UTAS SNA System &copy; {new Date().getFullYear()}</p>
+        <p className="px-4 pt-3 text-xs text-navy-500">UTAS SNA System &copy; {new Date().getFullYear()}</p>
       </div>
     </div>
   );
@@ -123,13 +123,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   return (
     <>
       {/* Fixed desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 lg:block">{content}</aside>
+      <aside className="hidden w-72 shrink-0 lg:block">{content}</aside>
 
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-navy-950/60" onClick={onClose} />
-          <aside className="absolute inset-y-0 left-0 w-64 shadow-xl">{content}</aside>
+          <aside className="absolute inset-y-0 left-0 w-72 shadow-xl">{content}</aside>
         </div>
       )}
     </>
