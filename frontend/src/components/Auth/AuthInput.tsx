@@ -7,17 +7,24 @@ interface AuthInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
   srLabel: string;
   error?: string;
   rightElement?: React.ReactNode;
+  /** Render the label visibly above the field instead of screen-reader-only.
+   *  Visible labels are the accessibility-preferred default; srLabel-only
+   *  remains for callers that haven't been migrated yet. */
+  visibleLabel?: boolean;
 }
 
 /** Icon-prefixed input with a focus glow and inline validation message, shared
  *  by the auth screens so Login/Register stay visually consistent. */
 export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
-  ({ icon: Icon, srLabel, error, rightElement, id, onFocus, onBlur, ...rest }, ref) => {
+  ({ icon: Icon, srLabel, error, rightElement, visibleLabel, id, onFocus, onBlur, ...rest }, ref) => {
     const [focused, setFocused] = useState(false);
 
     return (
       <div className="mb-5">
-        <label htmlFor={id} className="sr-only">
+        <label
+          htmlFor={id}
+          className={visibleLabel ? 'mb-1.5 block text-sm font-medium text-navy-800' : 'sr-only'}
+        >
           {srLabel}
         </label>
         <motion.div
