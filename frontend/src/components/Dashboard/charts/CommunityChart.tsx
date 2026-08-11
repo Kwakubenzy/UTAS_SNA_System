@@ -25,7 +25,7 @@ export const CommunityChart: React.FC<{ data: CommunityDatum[] }> = ({ data }) =
               cursor={{ fill: 'rgba(30, 58, 138, 0.06)' }}
               contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }}
             />
-            <Bar dataKey="value" fill="#2F6B00" radius={[4, 4, 0, 0]} maxBarSize={40} name="Members" />
+            <Bar dataKey="value" fill="#1E3A8A" radius={[4, 4, 0, 0]} maxBarSize={40} name="Members" />
           </BarChart>
         </ResponsiveContainer>
       )}

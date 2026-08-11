@@ -54,7 +54,7 @@ export const CentralityComparisonChart: React.FC<Props> = ({ influencers }) => {
               <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
               <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13 }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="Degree" fill="#2F6B00" radius={[3, 3, 0, 0]} maxBarSize={14} />
+              <Bar dataKey="Degree" fill="#1E3A8A" radius={[3, 3, 0, 0]} maxBarSize={14} />
               <Bar dataKey="Betweenness" fill="#2563EB" radius={[3, 3, 0, 0]} maxBarSize={14} />
               <Bar dataKey="Closeness" fill="#F59E0B" radius={[3, 3, 0, 0]} maxBarSize={14} />
               <Bar dataKey="Eigenvector" fill="#EF4444" radius={[3, 3, 0, 0]} maxBarSize={14} />

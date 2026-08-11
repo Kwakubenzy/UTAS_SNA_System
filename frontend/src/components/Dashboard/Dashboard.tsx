@@ -355,7 +355,7 @@ export const Dashboard: React.FC = () => {
                 key={label}
                 onClick={onClick}
                 disabled={actionLoading}
-                className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 p-4 text-left text-sm font-medium text-slate-600 transition-colors hover:border-[#2F6B00]/40 hover:text-[#2F6B00] disabled:cursor-not-allowed disabled:opacity-60 dark:border-navy-600 dark:text-navy-200 dark:hover:border-[#9FE870] dark:hover:text-[#9FE870]"
+                className="flex flex-col items-start gap-2 rounded-lg border border-slate-200 p-4 text-left text-sm font-medium text-slate-600 transition-colors hover:border-[#1E3A8A]/40 hover:text-[#1E3A8A] disabled:cursor-not-allowed disabled:opacity-60 dark:border-navy-600 dark:text-navy-200 dark:hover:border-blue-500 dark:hover:text-blue-400"
               >
                 <Icon className={`h-4.5 w-4.5 ${actionLoading ? 'animate-spin' : ''}`} />
                 {label}
