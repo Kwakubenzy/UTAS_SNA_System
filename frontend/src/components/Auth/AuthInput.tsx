@@ -35,10 +35,10 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
     const [focused, setFocused] = useState(false);
 
     return (
-      <div className="mb-5">
+      <div className="mb-6">
         <label
           htmlFor={id}
-          className={visibleLabel ? 'mb-1.5 block text-sm font-medium text-navy-800' : 'sr-only'}
+          className={visibleLabel ? 'mb-2 block text-sm font-medium text-navy-800' : 'sr-only'}
         >
           {srLabel}
         </label>
@@ -73,7 +73,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
               setFocused(false);
               onBlur?.(e);
             }}
-            className={`w-full rounded-xl bg-transparent py-3.5 pl-12 text-base text-navy-900 placeholder:text-slate-400 focus:outline-none disabled:bg-slate-50 ${
+            className={`w-full rounded-xl bg-transparent py-4 pl-12 text-base text-navy-900 placeholder:text-slate-400 focus:outline-none disabled:bg-slate-50 ${
               rightElement ? 'pr-12' : 'pr-4'
             }`}
             {...rest}
