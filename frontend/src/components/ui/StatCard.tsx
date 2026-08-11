@@ -4,8 +4,8 @@ import type { LucideIcon } from 'lucide-react';
 export type StatCardColor = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'neutral';
 
 const COLOR_STYLES: Record<StatCardColor, { bg: string; text: string }> = {
-  primary: { bg: 'bg-blue-50 dark:bg-[#1E3A8A]/15', text: 'text-[#1E3A8A] dark:text-blue-300' },
-  secondary: { bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400' },
+  primary: { bg: 'bg-[#EFF9E4] dark:bg-[#9FE870]/15', text: 'text-[#163300] dark:text-[#9FE870]' },
+  secondary: { bg: 'bg-[#EFF9E4] dark:bg-[#9FE870]/10', text: 'text-[#2F6B00] dark:text-[#8FDB5C]' },
   success: { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400' },
   warning: { bg: 'bg-amber-50 dark:bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400' },
   danger: { bg: 'bg-red-50 dark:bg-red-500/10', text: 'text-red-500 dark:text-red-400' },

@@ -69,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search students by name or ID..."
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-navy-900 placeholder:text-slate-400 transition-colors focus:border-[#1E3A8A] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/15 dark:border-navy-600 dark:bg-navy-800 dark:text-white dark:placeholder:text-navy-500 dark:focus:bg-navy-800"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-navy-900 placeholder:text-slate-400 transition-colors focus:border-[#2F6B00] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2F6B00]/15 dark:border-navy-600 dark:bg-navy-800 dark:text-white dark:placeholder:text-navy-500 dark:focus:bg-navy-800"
           />
         </div>
       </form>
@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
         {user?.role === 'admin' && (
           <button
             onClick={() => navigate('/users')}
-            className="flex items-center gap-1.5 rounded-lg border border-[#1E3A8A]/20 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-[#1E3A8A] transition-colors hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+            className="flex items-center gap-1.5 rounded-lg border border-[#163300]/20 bg-[#EFF9E4] px-3 py-1.5 text-xs font-semibold text-[#163300] transition-colors hover:bg-[#DFF3C8] dark:border-[#9FE870]/20 dark:bg-[#9FE870]/10 dark:text-[#9FE870] dark:hover:bg-[#9FE870]/20"
           >
             <ShieldCheck className="h-4 w-4" />
             <span className="hidden sm:inline">Admin Panel</span>
@@ -121,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             onClick={() => setShowMenu((v) => !v)}
             className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-navy-700"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1E3A8A] text-xs font-semibold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#163300] text-xs font-semibold text-white">
               {initials}
             </div>
             <div className="hidden text-left sm:block">

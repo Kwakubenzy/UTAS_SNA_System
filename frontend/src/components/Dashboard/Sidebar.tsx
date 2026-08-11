@@ -44,8 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   const linkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3.5 rounded-lg px-4 py-3 text-[15px] font-medium transition-colors ${
       isActive
-        ? 'bg-[#1E3A8A] text-white'
-        : 'text-navy-300 hover:bg-navy-800 hover:text-white'
+        ? 'bg-[#9FE870] text-[#163300]'
+        : 'text-[#D3F0B5] hover:bg-[#234A0C] hover:text-white'
     }`;
 
   const handleLogout = async () => {
@@ -55,22 +55,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
   };
 
   const content = (
-    <div className="flex h-full flex-col bg-navy-900">
-      <div className="flex items-center justify-between border-b border-navy-800 px-5 py-5">
+    <div className="flex h-full flex-col bg-[#163300]">
+      <div className="flex items-center justify-between border-b border-[#2A5210] px-5 py-5">
         <div className="flex items-center gap-2.5">
           <img src="/utas-logo.png" alt="UTAS logo" className="h-8 w-8 object-contain" />
           <div>
             <p className="text-sm font-bold leading-tight text-white">UTAS SNA</p>
-            <p className="text-[11px] leading-tight text-navy-400">Analytics Platform</p>
+            <p className="text-[11px] leading-tight text-[#9CC873]">Analytics Platform</p>
           </div>
         </div>
-        <button onClick={onClose} className="rounded-lg p-1 text-navy-300 hover:bg-navy-800 lg:hidden">
+        <button onClick={onClose} className="rounded-lg p-1 text-[#D3F0B5] hover:bg-[#234A0C] lg:hidden">
           <X className="h-5 w-5" />
         </button>
       </div>
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto px-3.5 py-5">
-        <p className="px-4 pb-2.5 pt-1 text-xs font-semibold uppercase tracking-wider text-navy-500">Main</p>
+        <p className="px-4 pb-2.5 pt-1 text-xs font-semibold uppercase tracking-wider text-[#8AB562]">Main</p>
         {PRIMARY_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} className={linkClasses} onClick={onClose}>
             <Icon className="h-5 w-5 shrink-0" />
@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
 
         {(isCampaignManager || isAdmin) && (
           <>
-            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-navy-500">
+            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-[#8AB562]">
               Campaigns
             </p>
             <NavLink to="/campaigns" className={linkClasses} onClick={onClose}>
@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
 
         {isAdmin && (
           <>
-            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-navy-500">
+            <p className="px-4 pb-2.5 pt-6 text-xs font-semibold uppercase tracking-wider text-[#8AB562]">
               Administration
             </p>
             <NavLink to="/users" className={linkClasses} onClick={onClose}>
@@ -103,19 +103,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
         )}
       </nav>
 
-      <div className="space-y-1.5 border-t border-navy-800 px-3.5 py-5">
+      <div className="space-y-1.5 border-t border-[#2A5210] px-3.5 py-5">
         <NavLink to="/settings" className={linkClasses} onClick={onClose}>
           <SettingsIcon className="h-5 w-5 shrink-0" />
           Settings
         </NavLink>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3.5 rounded-lg px-4 py-3 text-[15px] font-medium text-navy-300 transition-colors hover:bg-navy-800 hover:text-white"
+          className="flex w-full items-center gap-3.5 rounded-lg px-4 py-3 text-[15px] font-medium text-[#D3F0B5] transition-colors hover:bg-[#234A0C] hover:text-white"
         >
           <LogOut className="h-5 w-5 shrink-0" />
           Logout
         </button>
-        <p className="px-4 pt-3 text-xs text-navy-500">UTAS SNA System &copy; {new Date().getFullYear()}</p>
+        <p className="px-4 pt-3 text-xs text-[#8AB562]">UTAS SNA System &copy; {new Date().getFullYear()}</p>
       </div>
     </div>
   );

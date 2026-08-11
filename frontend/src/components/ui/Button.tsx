@@ -6,7 +6,7 @@ type Size = 'sm' | 'md';
 
 const VARIANT_STYLES: Record<Variant, string> = {
   primary:
-    'bg-[#1E3A8A] text-white shadow-sm hover:bg-[#17306F] focus-visible:outline-[#1E3A8A]',
+    'bg-[#9FE870] text-[#163300] shadow-sm hover:bg-[#8FDB5C] focus-visible:outline-[#163300]',
   secondary:
     'bg-white text-navy-700 border border-slate-300 hover:bg-slate-50 dark:bg-navy-800 dark:text-navy-100 dark:border-navy-600 dark:hover:bg-navy-700',
   danger: 'bg-red-500 text-white hover:bg-red-600 focus-visible:outline-red-500',
