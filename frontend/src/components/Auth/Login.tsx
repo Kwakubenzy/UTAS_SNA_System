@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Lock, User as UserIcon, Loader2, Share2, BarChart3, Target } from 'lucide-react';
+import { Eye, EyeOff, Lock, User as UserIcon, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { AuthInput } from './AuthInput';
 import { GoogleSignInButton } from './GoogleSignInButton';
@@ -13,60 +13,6 @@ interface FormErrors {
   username?: string;
   password?: string;
 }
-
-const BRAND_POINTS = [
-  {
-    icon: Share2,
-    title: 'Map the real network',
-    text: 'Every student a node, every friendship an edge — the campus as it actually connects.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Measure influence',
-    text: 'Centrality, community detection, and bridge-node analysis on live survey data.',
-  },
-  {
-    icon: Target,
-    title: 'Act on evidence',
-    text: 'Turn analysis into named, concrete campaign outreach plans in one click.',
-  },
-];
-
-/** Decorative node-and-edge motif for the brand panel -- the product is
- *  literally network graphs, so the background echoes one. Purely
- *  decorative (aria-hidden), low-contrast so text stays readable. */
-const NetworkMotif: React.FC = () => (
-  <svg
-    aria-hidden="true"
-    className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.14]"
-    viewBox="0 0 400 600"
-    preserveAspectRatio="xMidYMid slice"
-  >
-    <g stroke="#9FE870" strokeWidth="1">
-      <line x1="60" y1="80" x2="180" y2="140" />
-      <line x1="180" y1="140" x2="90" y2="260" />
-      <line x1="180" y1="140" x2="320" y2="90" />
-      <line x1="90" y1="260" x2="230" y2="310" />
-      <line x1="230" y1="310" x2="320" y2="90" />
-      <line x1="230" y1="310" x2="150" y2="440" />
-      <line x1="150" y1="440" x2="310" y2="480" />
-      <line x1="310" y1="480" x2="360" y2="340" />
-      <line x1="230" y1="310" x2="360" y2="340" />
-      <line x1="60" y1="520" x2="150" y2="440" />
-    </g>
-    <g fill="#C9F0A5">
-      <circle cx="60" cy="80" r="6" />
-      <circle cx="180" cy="140" r="9" />
-      <circle cx="320" cy="90" r="5" />
-      <circle cx="90" cy="260" r="5" />
-      <circle cx="230" cy="310" r="10" />
-      <circle cx="150" cy="440" r="6" />
-      <circle cx="310" cy="480" r="7" />
-      <circle cx="360" cy="340" r="5" />
-      <circle cx="60" cy="520" r="4" />
-    </g>
-  </svg>
-);
 
 export const Login: React.FC = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -132,60 +78,14 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#9FE870]">
-      {/* Brand panel -- desktop only, echoes the app's navy sidebar theme */}
-      <div className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[#163300] p-12 lg:flex">
-        <NetworkMotif />
-
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
-            <img src="/utas-logo.png" alt="UTAS logo" className="h-7 w-7 object-contain" />
-          </div>
-          <div>
-            <p className="text-base font-bold leading-tight text-white">UTAS SNA</p>
-            <p className="text-xs leading-tight text-[#B5E68C]">Analytics Platform</p>
-          </div>
-        </div>
-
-        <div className="relative">
-          <h2 className="mb-3 text-3xl font-bold leading-snug text-white">
-            Social Network Analysis for UTAS Campus
-          </h2>
-          <p className="mb-10 text-[15px] leading-relaxed text-[#D3F0B5]">
-            Evidence-based insight into how students actually connect — built for
-            campaign planning that reaches beyond the obvious circles.
-          </p>
-
-          <ul className="space-y-6">
-            {BRAND_POINTS.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="flex gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#9FE870]">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="mt-0.5 text-sm leading-relaxed text-[#D3F0B5]">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <p className="relative text-xs text-white/40">
-          UTAS SNA System &copy; {new Date().getFullYear()} &middot; University of Technology and Applied Sciences
-        </p>
-      </div>
-
-      {/* Form panel */}
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#9FE870] px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           className="w-full max-w-md"
         >
-          {/* Compact logo header -- mobile/tablet only, where the brand panel is hidden */}
-          <div className="mb-8 flex flex-col items-center text-center lg:hidden">
+          <div className="mb-8 flex flex-col items-center text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#163300]">
               <img src="/utas-logo.png" alt="UTAS logo" className="h-9 w-9 object-contain" />
             </div>
@@ -291,7 +191,6 @@ export const Login: React.FC = () => {
             </p>
           </div>
         </motion.div>
-      </div>
     </div>
   );
 };
