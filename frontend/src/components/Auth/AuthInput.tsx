@@ -2,6 +2,15 @@ import React, { forwardRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  const bigint = parseInt(clean, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 interface AuthInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'> {
   icon: LucideIcon;
   srLabel: string;
@@ -11,12 +20,18 @@ interface AuthInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
    *  Visible labels are the accessibility-preferred default; srLabel-only
    *  remains for callers that haven't been migrated yet. */
   visibleLabel?: boolean;
+  /** Focus/highlight color. Defaults to the app's navy so existing callers
+   *  (Register) keep their look; Login passes its own theme color. */
+  accentColor?: string;
 }
 
 /** Icon-prefixed input with a focus glow and inline validation message, shared
  *  by the auth screens so Login/Register stay visually consistent. */
 export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
-  ({ icon: Icon, srLabel, error, rightElement, visibleLabel, id, onFocus, onBlur, ...rest }, ref) => {
+  (
+    { icon: Icon, srLabel, error, rightElement, visibleLabel, accentColor = '#1E3A8A', id, onFocus, onBlur, ...rest },
+    ref
+  ) => {
     const [focused, setFocused] = useState(false);
 
     return (
@@ -32,18 +47,20 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
             boxShadow: error
               ? '0 0 0 4px rgba(239, 68, 68, 0.12)'
               : focused
-              ? '0 0 0 4px rgba(30, 58, 138, 0.12)'
+              ? `0 0 0 4px ${hexToRgba(accentColor, 0.12)}`
               : '0 0 0 0 rgba(30, 58, 138, 0)',
           }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           className={`relative rounded-xl border bg-white transition-colors ${
-            error ? 'border-red-400' : focused ? 'border-[#1E3A8A]' : 'border-slate-200'
+            error ? 'border-red-400' : 'border-slate-200'
           }`}
+          style={!error && focused ? { borderColor: accentColor } : undefined}
         >
           <Icon
             className={`pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 transition-colors ${
-              error ? 'text-red-400' : focused ? 'text-[#1E3A8A]' : 'text-slate-400'
+              error ? 'text-red-400' : 'text-slate-400'
             }`}
+            style={!error && focused ? { color: accentColor } : undefined}
           />
           <input
             ref={ref}

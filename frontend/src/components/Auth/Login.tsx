@@ -42,7 +42,7 @@ const NetworkMotif: React.FC = () => (
     viewBox="0 0 400 600"
     preserveAspectRatio="xMidYMid slice"
   >
-    <g stroke="#93C5FD" strokeWidth="1">
+    <g stroke="#A5A4FF" strokeWidth="1">
       <line x1="60" y1="80" x2="180" y2="140" />
       <line x1="180" y1="140" x2="90" y2="260" />
       <line x1="180" y1="140" x2="320" y2="90" />
@@ -54,7 +54,7 @@ const NetworkMotif: React.FC = () => (
       <line x1="230" y1="310" x2="360" y2="340" />
       <line x1="60" y1="520" x2="150" y2="440" />
     </g>
-    <g fill="#BFDBFE">
+    <g fill="#C7C6FF">
       <circle cx="60" cy="80" r="6" />
       <circle cx="180" cy="140" r="9" />
       <circle cx="320" cy="90" r="5" />
@@ -132,9 +132,9 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-[#E4E4FF]">
       {/* Brand panel -- desktop only, echoes the app's navy sidebar theme */}
-      <div className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-navy-900 p-12 lg:flex">
+      <div className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[#17163F] p-12 lg:flex">
         <NetworkMotif />
 
         <div className="relative flex items-center gap-3">
@@ -143,7 +143,7 @@ export const Login: React.FC = () => {
           </div>
           <div>
             <p className="text-base font-bold leading-tight text-white">UTAS SNA</p>
-            <p className="text-xs leading-tight text-navy-400">Analytics Platform</p>
+            <p className="text-xs leading-tight text-[#A3A2E8]">Analytics Platform</p>
           </div>
         </div>
 
@@ -151,7 +151,7 @@ export const Login: React.FC = () => {
           <h2 className="mb-3 text-3xl font-bold leading-snug text-white">
             Social Network Analysis for UTAS Campus
           </h2>
-          <p className="mb-10 text-[15px] leading-relaxed text-navy-300">
+          <p className="mb-10 text-[15px] leading-relaxed text-[#C0BFF0]">
             Evidence-based insight into how students actually connect — built for
             campaign planning that reaches beyond the obvious circles.
           </p>
@@ -159,19 +159,19 @@ export const Login: React.FC = () => {
           <ul className="space-y-6">
             {BRAND_POINTS.map(({ icon: Icon, title, text }) => (
               <li key={title} className="flex gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-blue-300">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[#B9B8FF]">
                   <Icon className="h-5 w-5" />
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="mt-0.5 text-sm leading-relaxed text-navy-300">{text}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-[#C0BFF0]">{text}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="relative text-xs text-navy-500">
+        <p className="relative text-xs text-white/40">
           UTAS SNA System &copy; {new Date().getFullYear()} &middot; University of Technology and Applied Sciences
         </p>
       </div>
@@ -186,14 +186,14 @@ export const Login: React.FC = () => {
         >
           {/* Compact logo header -- mobile/tablet only, where the brand panel is hidden */}
           <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#1E3A8A]">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#6260FF]">
               <img src="/utas-logo.png" alt="UTAS logo" className="h-9 w-9 object-contain" />
             </div>
             <h1 className="text-xl font-bold text-navy-900">UTAS SNA System</h1>
             <p className="mt-1 text-sm text-slate-500">Social Network Analysis Platform</p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+          <div className="rounded-2xl border border-[#D5D4FA] bg-white p-8 shadow-sm sm:p-10">
             <div className="mb-7">
               <h1 className="text-2xl font-bold text-navy-900">Sign in</h1>
               <p className="mt-1.5 text-sm text-slate-500">
@@ -248,14 +248,14 @@ export const Login: React.FC = () => {
                     type="checkbox"
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
-                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#1E3A8A] focus:ring-[#1E3A8A]"
+                    className="h-4 w-4 cursor-pointer rounded border-slate-300 text-[#6260FF] focus:ring-[#6260FF]"
                   />
                   Remember me
                 </label>
                 <button
                   type="button"
                   onClick={() => toast('Contact your system administrator to reset your password.')}
-                  className="cursor-pointer text-sm font-semibold text-[#1E3A8A] transition-colors hover:text-blue-800"
+                  className="cursor-pointer text-sm font-semibold text-[#6260FF] transition-colors hover:text-[#4B49D9]"
                 >
                   Forgot Password?
                 </button>
@@ -266,7 +266,7 @@ export const Login: React.FC = () => {
                 disabled={loading}
                 whileHover={loading ? undefined : { scale: 1.01 }}
                 whileTap={loading ? undefined : { scale: 0.99 }}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1E3A8A] py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#17306F] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#6260FF] py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-[#4B49D9] focus:outline-none focus:ring-2 focus:ring-[#6260FF]/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading && <Loader2 className="h-4.5 w-4.5 animate-spin" />}
                 {loading ? 'Signing in...' : 'Sign in'}
@@ -283,7 +283,7 @@ export const Login: React.FC = () => {
 
             <p className="mt-7 text-center text-sm text-slate-500">
               Don't have an account?{' '}
-              <Link to="/register" className="font-semibold text-[#1E3A8A] transition-colors hover:text-[#17306F]">
+              <Link to="/register" className="font-semibold text-[#6260FF] transition-colors hover:text-[#4B49D9]">
                 Register Here
               </Link>
             </p>
