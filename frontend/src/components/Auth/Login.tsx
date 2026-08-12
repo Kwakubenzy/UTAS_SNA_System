@@ -78,26 +78,23 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#9FE870] px-6 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F8EF] px-6 py-12">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="w-full max-w-md"
+        className="w-full max-w-[26rem]"
       >
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-[#163300]">
-            <img src="/utas-logo.png" alt="UTAS logo" className="h-9 w-9 object-contain" />
-          </div>
-          <h1 className="text-xl font-bold text-navy-900">UTAS SNA System</h1>
-          <p className="mt-1 text-sm text-[#2F4A17]">Social Network Analysis Platform</p>
-        </div>
-
-        <div className="rounded-2xl border border-[#B7E18C] bg-white p-8 shadow-sm sm:p-10">
-          {/* h2, not h1 -- the page title above is the h1. */}
-          <div className="mb-7">
-            <h2 className="text-2xl font-bold text-navy-900">Sign in</h2>
-            <p className="mt-1.5 text-sm text-slate-500">Welcome back — enter your details to continue.</p>
+        {/* One card, one header. The logo, product name, and sign-in prompt
+            used to be split between a page header and a second header inside
+            the card, which stacked four blocks of text above the first field. */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-[#163300]/[0.06] sm:p-10">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#163300]">
+              <img src="/utas-logo.png" alt="UTAS logo" className="h-8 w-8 object-contain" />
+            </div>
+            <h1 className="text-[1.375rem] font-bold tracking-tight text-navy-900">UTAS SNA System</h1>
+            <p className="mt-1.5 text-sm text-slate-500">Sign in to the Social Network Analysis platform</p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -143,7 +140,7 @@ export const Login: React.FC = () => {
               }
             />
 
-            <div className="mb-7 flex items-center justify-between">
+            <div className="mb-6 flex items-center justify-between">
               <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
                 <input
                   type="checkbox"
@@ -167,7 +164,7 @@ export const Login: React.FC = () => {
               disabled={loading}
               whileHover={loading ? undefined : { scale: 1.01 }}
               whileTap={loading ? undefined : { scale: 0.99 }}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#9FE870] py-3 text-base font-semibold text-[#163300] shadow-sm transition-colors hover:bg-[#8FDB5C] focus:outline-none focus:ring-2 focus:ring-[#163300]/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#9FE870] py-3.5 text-[15px] font-semibold text-[#163300] transition-colors hover:bg-[#8FDB5C] focus:outline-none focus:ring-2 focus:ring-[#163300]/25 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading && <Loader2 className="h-4.5 w-4.5 animate-spin" />}
               {loading ? 'Signing in...' : 'Sign in'}
@@ -176,19 +173,23 @@ export const Login: React.FC = () => {
 
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-400">or</span>
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">or</span>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           <GoogleSignInButton onCredential={handleGoogleCredential} disabled={loading || googleLoading} />
 
-          <p className="mt-7 text-center text-sm text-slate-500">
+          <p className="mt-8 text-center text-sm text-slate-500">
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold text-[#163300] transition-colors hover:text-[#2F6B00]">
               Register Here
             </Link>
           </p>
         </div>
+
+        <p className="mt-6 text-center text-xs text-slate-400">
+          UTAS SNA System &copy; {new Date().getFullYear()} &middot; University of Technology and Applied Sciences
+        </p>
       </motion.div>
     </div>
   );
