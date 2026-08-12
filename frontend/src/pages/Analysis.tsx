@@ -16,12 +16,14 @@ import {
   Award,
   Boxes,
   ArrowUpDown,
+  Lightbulb,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { LucideIcon } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useAnalysisData, CommunityEntry } from '../hooks/useAnalysisData';
+import { ExplainResultsModal } from '../components/Analysis/ExplainResultsModal';
 import { Button } from '../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { StatCard } from '../components/ui/StatCard';
@@ -159,6 +161,7 @@ export const Analysis: React.FC = () => {
   const [runningAnalysis, setRunningAnalysis] = useState(false);
   const [importing, setImporting] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const [showExplain, setShowExplain] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const topByMetric = useMemo(() => {
@@ -301,6 +304,9 @@ export const Analysis: React.FC = () => {
               </Button>
             </>
           )}
+          <Button variant="secondary" size="sm" icon={<Lightbulb className="h-4 w-4" />} onClick={() => setShowExplain(true)}>
+            Explain Results
+          </Button>
           <Button size="sm" icon={<FileDown className="h-4 w-4" />} loading={downloadingReport} disabled={!overview} onClick={handleDownloadReport}>
             Export PDF
           </Button>
@@ -437,6 +443,8 @@ export const Analysis: React.FC = () => {
           </Card>
         </>
       )}
+
+      <ExplainResultsModal open={showExplain} onClose={() => setShowExplain(false)} overview={overview} />
     </motion.div>
   );
 };

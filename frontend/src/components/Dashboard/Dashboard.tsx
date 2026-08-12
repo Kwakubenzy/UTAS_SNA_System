@@ -285,7 +285,10 @@ export const Dashboard: React.FC = () => {
             <StatCard label="Communities" value={stats.communities.toLocaleString()} icon={Boxes} color="secondary" onClick={() => navigate('/analysis')} />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <StatCard label="Average degree" value={stats.averageDegree.toFixed(4)} icon={TrendingUp} color="neutral" onClick={() => navigate('/analysis')} />
+            {/* This is average degree *centrality* (degree / (n-1)), not a
+                friend count -- labelling it "Average degree" made a 0.0035
+                reading look nonsensical. */}
+            <StatCard label="Avg. degree centrality" value={stats.averageDegree.toFixed(4)} icon={TrendingUp} color="neutral" onClick={() => navigate('/analysis')} />
           </motion.div>
           <motion.div variants={itemVariants}>
             <StatCard label="Bridge nodes" value={stats.bridgeNodes.toLocaleString()} icon={Waypoints} color="danger" onClick={() => navigate('/network')} />
