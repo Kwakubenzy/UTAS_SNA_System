@@ -118,8 +118,13 @@ def google_login():
             return jsonify({'success': False, 'message': 'Google login is not configured on this server'}), 500
 
         try:
+            # Allow a little clock drift between this server and Google's.
+            # Without it, a machine whose clock is even a few seconds slow
+            # rejects every token with "Token used too early" -- the server
+            # sees Google's issued-at timestamp as being in the future.
             payload = google_id_token.verify_oauth2_token(
-                credential, google_requests.Request(), client_id
+                credential, google_requests.Request(), client_id,
+                clock_skew_in_seconds=30,
             )
         except ValueError as e:
             logger.warning(f'Rejected invalid Google credential: {str(e)}')
