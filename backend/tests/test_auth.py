@@ -149,3 +149,73 @@ def test_delete_profile_requires_correct_password(client, student_token):
     resp = client.delete('/api/auth/profile', json={'password': 'Testpass1'}, headers=auth_header(student_token))
     assert resp.status_code == 200
     assert resp.get_json()['success'] is True
+
+
+def test_login_with_email_instead_of_username(client):
+    """The login form asks for "Username or Email", so the email a user
+    registered with must actually work as a login identifier."""
+    client.post('/api/auth/register', json={
+        'username': 'emailuser', 'email': 'emailuser@utas.edu',
+        'password': 'Testpass1', 'full_name': 'Email User',
+    })
+
+    resp = client.post('/api/auth/login', json={
+        'username': 'emailuser@utas.edu', 'password': 'Testpass1',
+    })
+    assert resp.status_code == 200
+    assert resp.get_json()['user']['username'] == 'emailuser'
+
+
+def test_login_email_is_case_insensitive(client):
+    client.post('/api/auth/register', json={
+        'username': 'caseuser', 'email': 'CaseUser@Utas.edu',
+        'password': 'Testpass1', 'full_name': 'Case User',
+    })
+
+    resp = client.post('/api/auth/login', json={
+        'username': 'caseuser@utas.EDU', 'password': 'Testpass1',
+    })
+    assert resp.status_code == 200
+
+
+def test_login_with_username_still_works(client):
+    client.post('/api/auth/register', json={
+        'username': 'bothuser', 'email': 'bothuser@utas.edu',
+        'password': 'Testpass1', 'full_name': 'Both User',
+    })
+
+    resp = client.post('/api/auth/login', json={
+        'username': 'bothuser', 'password': 'Testpass1',
+    })
+    assert resp.status_code == 200
+
+
+def test_login_rejects_wrong_password_for_valid_email(client):
+    client.post('/api/auth/register', json={
+        'username': 'wrongpw', 'email': 'wrongpw@utas.edu',
+        'password': 'Testpass1', 'full_name': 'Wrong Pw',
+    })
+
+    resp = client.post('/api/auth/login', json={
+        'username': 'wrongpw@utas.edu', 'password': 'NotThePassword',
+    })
+    assert resp.status_code == 401
+
+
+def test_login_error_does_not_reveal_whether_account_exists(client):
+    """A different message for "no such user" versus "wrong password" would
+    let someone probe which email addresses are registered."""
+    client.post('/api/auth/register', json={
+        'username': 'privacy', 'email': 'privacy@utas.edu',
+        'password': 'Testpass1', 'full_name': 'Privacy',
+    })
+
+    real_email_wrong_pw = client.post('/api/auth/login', json={
+        'username': 'privacy@utas.edu', 'password': 'WrongPassword',
+    })
+    unknown_account = client.post('/api/auth/login', json={
+        'username': 'nobody@utas.edu', 'password': 'WrongPassword',
+    })
+
+    assert real_email_wrong_pw.status_code == unknown_account.status_code == 401
+    assert real_email_wrong_pw.get_json()['message'] == unknown_account.get_json()['message']

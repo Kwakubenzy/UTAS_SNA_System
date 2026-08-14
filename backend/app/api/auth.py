@@ -70,8 +70,10 @@ def login():
     try:
         data = request.get_json()
         
+        # The 'username' field carries either a username or an email --
+        # AuthService.authenticate_user accepts both.
         if not data.get('username') or not data.get('password'):
-            return jsonify({'success': False, 'message': 'Username and password required'}), 400
+            return jsonify({'success': False, 'message': 'Username/email and password required'}), 400
         
         # Authenticate user
         result = AuthService.authenticate_user(data['username'], data['password'])

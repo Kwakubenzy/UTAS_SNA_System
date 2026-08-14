@@ -59,25 +59,45 @@ class AuthService:
             return {'success': False, 'message': str(e)}
     
     @staticmethod
-    def authenticate_user(username, password):
-        """Authenticate user with username and password"""
+    def authenticate_user(identifier, password):
+        """Authenticate a user by either their username or their email address.
+
+        The login form asks for "Username or Email", so both have to work
+        here -- an earlier version looked up username only, which meant
+        anyone entering the email they registered with was rejected.
+
+        Email is matched case-insensitively, since addresses are not
+        case-sensitive in practice and registration already guarantees they
+        are unique. Username stays an exact match: nothing stops two
+        accounts differing only by capitalisation, so a loose match there
+        could be ambiguous.
+        """
         try:
-            user = User.query.filter_by(username=username).first()
-            
+            identifier = (identifier or '').strip()
+
+            user = User.query.filter(
+                db.or_(
+                    User.username == identifier,
+                    db.func.lower(User.email) == identifier.lower(),
+                )
+            ).first()
+
+            # Same message whether the account is missing or the password is
+            # wrong, so this cannot be used to discover which emails exist.
             if not user:
-                return {'success': False, 'message': 'Invalid username or password'}
-            
+                return {'success': False, 'message': 'Invalid username/email or password'}
+
             if not user.is_active:
                 return {'success': False, 'message': 'Account is inactive'}
-            
+
             if not user.check_password(password):
-                return {'success': False, 'message': 'Invalid username or password'}
-            
+                return {'success': False, 'message': 'Invalid username/email or password'}
+
             # Update last login
             user.last_login = datetime.utcnow()
             db.session.commit()
-            
-            logger.info(f'User logged in: {username}')
+
+            logger.info(f'User logged in: {user.username}')
             return {
                 'success': True,
                 'message': 'Login successful',
