@@ -32,7 +32,9 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { downloadCsv } from '../utils/csvExport';
 import { InfluencerResult } from '../types';
 
-const EXCEL_EXTENSIONS = ['.xlsx', '.xls'];
+// Google Forms exports responses as either .xlsx or .csv, so the import
+// accepts both; the backend detects the layout from the column headers.
+const IMPORT_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 
 interface RankRow {
   name: string;
@@ -232,14 +234,16 @@ export const Analysis: React.FC = () => {
     if (!file) return;
 
     const lowerName = file.name.toLowerCase();
-    if (!EXCEL_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
-      toast.error('Only Excel files (.xlsx or .xls) can be imported');
+    if (!IMPORT_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
+      toast.error('Only Excel (.xlsx, .xls) or CSV (.csv) files can be imported');
       return;
     }
 
+    const isCsv = lowerName.endsWith('.csv');
+
     setImporting(true);
     try {
-      const response = await api.importExcel(file);
+      const response = isCsv ? await api.importCSV(file) : await api.importExcel(file);
       if (response.success) {
         toast.success(
           `Imported ${response.valid_rows ?? 0} of ${response.total_rows ?? 0} rows` +
@@ -256,10 +260,10 @@ export const Analysis: React.FC = () => {
         }
         await refresh();
       } else {
-        toast.error(response.error || 'Failed to import Excel file');
+        toast.error(response.error || 'Failed to import the file');
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.error || err.message || 'Failed to import Excel file');
+      toast.error(err.response?.data?.error || err.message || 'Failed to import the file');
     } finally {
       setImporting(false);
     }
@@ -300,7 +304,7 @@ export const Analysis: React.FC = () => {
                 Refresh Analysis
               </Button>
               <Button variant="secondary" size="sm" icon={<FileUp className="h-4 w-4" />} loading={importing} onClick={() => fileInputRef.current?.click()}>
-                Import Excel
+                Import Data
               </Button>
             </>
           )}
@@ -313,7 +317,7 @@ export const Analysis: React.FC = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
             onChange={handleFileSelected}
             className="hidden"
           />

@@ -171,18 +171,30 @@ class DataImporter:
     @staticmethod
     def import_csv(filepath):
         """
-        Import unified CSV file and populate database
+        Import a CSV file and populate the database.
 
-        CSV Format:
+        Accepts either supported layout, exactly like import_excel:
+        the friendship-survey export (one row per respondent-friend pair),
+        or the unified format:
         from_student_id, from_name, from_tribe, from_party, from_college, from_department, from_year,
         to_student_id, to_name, to_tribe, to_party, to_college, to_department, to_year,
         strength, relationship_type
         """
         try:
-            df = pd.read_csv(filepath)
+            # utf-8-sig, not utf-8: Google Forms and Excel both write a BOM at
+            # the start of CSV exports. Read as plain utf-8 it becomes part of
+            # the first header ("﻿Timestamp"), so that column silently
+            # stops matching. Fall back to latin-1 for files saved by older
+            # Windows tools, which would otherwise raise UnicodeDecodeError.
+            try:
+                df = pd.read_csv(filepath, encoding='utf-8-sig')
+            except UnicodeDecodeError:
+                logger.info("CSV is not UTF-8; retrying with latin-1")
+                df = pd.read_csv(filepath, encoding='latin-1')
+
             df.columns = [_normalize_column(c) for c in df.columns]
             logger.info(f"Loaded {len(df)} rows from {filepath}")
-            return DataImporter._process_dataframe(df)
+            return DataImporter._route_dataframe(df)
         except Exception as e:
             db.session.rollback()
             logger.error(f"Import failed: {str(e)}")
@@ -190,6 +202,19 @@ class DataImporter:
                 'success': False,
                 'error': str(e)
             }
+
+    @staticmethod
+    def _route_dataframe(df):
+        """Send a loaded sheet to whichever processor matches its columns.
+
+        Shared by the CSV and Excel entry points so the two cannot drift --
+        import_csv previously lacked the survey check entirely, so a survey
+        exported as CSV failed every row against the unified format.
+        """
+        if DataImporter.is_survey_format(df.columns):
+            logger.info("Detected friendship-survey column format")
+            return DataImporter._process_survey_dataframe(df)
+        return DataImporter._process_dataframe(df)
 
     @staticmethod
     def import_excel(filepath):
@@ -205,12 +230,7 @@ class DataImporter:
             df = pd.read_excel(filepath, engine='openpyxl')
             df.columns = [_normalize_column(c) for c in df.columns]
             logger.info(f"Loaded {len(df)} rows from {filepath}")
-
-            if DataImporter.is_survey_format(df.columns):
-                logger.info("Detected friendship-survey column format")
-                return DataImporter._process_survey_dataframe(df)
-
-            return DataImporter._process_dataframe(df)
+            return DataImporter._route_dataframe(df)
         except Exception as e:
             db.session.rollback()
             logger.error(f"Import failed: {str(e)}")

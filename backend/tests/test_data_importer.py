@@ -242,3 +242,58 @@ def test_end_to_end_google_forms_xlsx_upload(client, admin_token, app):
 
         ama = Student.query.filter_by(name='Ama Owusu').first()
         assert ama.gender == 'Female'              # curly-apostrophe header matched
+
+
+def test_survey_csv_is_detected_not_treated_as_unified_format(app, tmp_path):
+    """Regression: import_csv had no survey-format check, so a Google Forms
+    export saved as CSV failed every row against the unified layout."""
+    with app.app_context():
+        csv_path = tmp_path / "responses.csv"
+        pd.DataFrame([_survey_row()], columns=SURVEY_COLUMNS).to_csv(csv_path, index=False)
+
+        result = DataImporter.import_csv(str(csv_path))
+        assert result['success'] is True
+        assert result['valid_rows'] == 1
+        assert Student.query.filter_by(name='Kwame Mensah').first() is not None
+        assert Connection.query.count() == 1
+
+
+def test_csv_with_utf8_bom_still_matches_columns(app, tmp_path):
+    """Google Forms and Excel write a BOM; read as plain utf-8 it corrupts
+    the first header and that column stops matching."""
+    with app.app_context():
+        csv_path = tmp_path / "bom.csv"
+        pd.DataFrame([_survey_row()], columns=SURVEY_COLUMNS).to_csv(
+            csv_path, index=False, encoding='utf-8-sig')
+
+        result = DataImporter.import_csv(str(csv_path))
+        assert result['success'] is True
+        assert result['valid_rows'] == 1
+
+        student = Student.query.filter_by(name='Kwame Mensah').first()
+        assert student is not None
+        assert student.party == 'TESCON'
+
+
+def test_csv_upload_through_the_import_endpoint(client, admin_token, app, tmp_path):
+    """The path the Import button actually takes for a .csv file."""
+    import io
+
+    csv_bytes = pd.DataFrame([_survey_row()], columns=SURVEY_COLUMNS).to_csv(index=False).encode('utf-8')
+
+    resp = client.post(
+        '/api/analysis/import-csv',
+        data={'file': (io.BytesIO(csv_bytes), 'Form Responses.csv')},
+        headers=auth_header(admin_token),
+        content_type='multipart/form-data',
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body['success'] is True
+
+    result = body.get('result', body)
+    assert result['valid_rows'] == 1
+
+    with app.app_context():
+        assert Student.query.count() == 2   # respondent + friend
+        assert Connection.query.count() == 1
