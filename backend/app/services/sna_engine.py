@@ -185,35 +185,42 @@ class SNAEngine:
             return {}
     
     def identify_bridge_nodes(self):
-        """Identify nodes that bridge different communities"""
-        if 'communities' not in self.metrics or 'betweenness_centrality' not in self.metrics:
+        """Identify bridge nodes: students whose removal would break the
+        network into more pieces than before -- articulation points, or cut
+        vertices, in graph terms.
+
+        This is the definition the project actually uses. An earlier version
+        instead looked for nodes with above-average betweenness whose
+        neighbours spanned two or more Louvain communities, which could never
+        fire on real survey data: Louvain assigns each disconnected component
+        its own community, so a node's neighbours are always inside that one
+        community and the test was unsatisfiable. On a 717-student network
+        holding 77 genuine cut vertices it reported zero.
+        """
+        if self.graph is None:
             return {}
-        
+
         try:
-            communities = self.metrics['communities']
-            betweenness = self.metrics['betweenness_centrality']
-            
+            betweenness = self.metrics.get('betweenness_centrality', {})
+            communities = self.metrics.get('communities', {})
+
             bridge_nodes = {}
-            betweenness_threshold = np.percentile(list(betweenness.values()), 75)
-            
-            for node_id, betweenness_score in betweenness.items():
-                if betweenness_score > betweenness_threshold:
-                    # Check if node connects different communities
-                    node_community = communities.get(node_id)
-                    neighbors_communities = set()
-                    
-                    for neighbor in self.graph.neighbors(node_id):
-                        neighbors_communities.add(communities.get(neighbor))
-                    
-                    if len(neighbors_communities) > 1:
-                        bridge_nodes[node_id] = {
-                            'betweenness': betweenness_score,
-                            'communities_connected': list(neighbors_communities),
-                            'is_bridge': True
-                        }
-            
+            # articulation_points may yield a node once per biconnected
+            # component it joins; keying by node id collapses those.
+            for node_id in nx.articulation_points(self.graph):
+                neighbour_communities = {
+                    communities.get(n) for n in self.graph.neighbors(node_id)
+                }
+                bridge_nodes[node_id] = {
+                    'betweenness': betweenness.get(node_id, 0.0),
+                    'communities_connected': sorted(
+                        c for c in neighbour_communities if c is not None
+                    ),
+                    'is_bridge': True,
+                }
+
             self.metrics['bridge_nodes'] = bridge_nodes
-            logger.info(f"Identified {len(bridge_nodes)} bridge nodes")
+            logger.info(f"Identified {len(bridge_nodes)} bridge nodes (articulation points)")
             return bridge_nodes
         except Exception as e:
             logger.error(f"Error identifying bridge nodes: {str(e)}")
