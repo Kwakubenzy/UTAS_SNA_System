@@ -297,3 +297,65 @@ def test_csv_upload_through_the_import_endpoint(client, admin_token, app, tmp_pa
     with app.app_context():
         assert Student.query.count() == 2   # respondent + friend
         assert Connection.query.count() == 1
+
+
+def test_level_notation_is_converted_to_year():
+    """UTAS respondents answer in levels of 100, not years 1-4."""
+    from app.services.data_importer import _clean_year
+    assert _clean_year('LEVEL 100') == 1
+    assert _clean_year('LEVEL 400') == 4
+    assert _clean_year('Level 300') == 3
+    assert _clean_year('300') == 3
+    assert _clean_year(2) == 2          # plain year still works
+    assert _clean_year(2.0) == 2        # spreadsheet float
+    assert _clean_year('sophomore') is None
+    assert _clean_year('900') is None   # out of range after conversion
+
+
+def test_real_world_headers_with_typos_and_slashes_resolve(app):
+    """The live UTAS form: a missing space in NAMEOF, slash-separated
+    SCHOOL/COLLEGE with an inline example and a line break, YEAR/LEVEL, and
+    a REPONDENT typo. Every one of these silently blanked a field before."""
+    with app.app_context():
+        columns = [
+            'NAME OF RESPONDENT', 'GENDER', 'PROGRAM OF STUDY',
+            'SCHOOL/COLLEGE\neg. School of Public Health, Mathematics etc.',
+            'YEAR/LEVEL', 'POLITICAL PARTY', 'REPONDENT RELIGION', 'TRIBE',
+            'NAMEOF YOUR FRIEND', 'YOUR FRIEND GENDER', 'YOUR FRIEND PROGRAM OF STUDY',
+            'YOUR FRIEND COLLEGE/SCHOOL', 'YOUR FRIEND LEVEL/YEAR',
+            'YOUR FRIEND POLITICAL PARTY', 'YOUR FRIEND RELIGION', 'YOUR FRIEND TRIBE',
+        ]
+        row = {
+            'NAME OF RESPONDENT': 'Kwame Mensah', 'GENDER': 'Male',
+            'PROGRAM OF STUDY': 'BSC NURSING',
+            'SCHOOL/COLLEGE\neg. School of Public Health, Mathematics etc.': 'School of Nursing',
+            'YEAR/LEVEL': 'LEVEL 400', 'POLITICAL PARTY': 'TEIN',
+            'REPONDENT RELIGION': 'Christian', 'TRIBE': 'Akan',
+            'NAMEOF YOUR FRIEND': 'Ama Owusu', 'YOUR FRIEND GENDER': 'Female',
+            'YOUR FRIEND PROGRAM OF STUDY': 'bsc. public health',
+            'YOUR FRIEND COLLEGE/SCHOOL': 'School of Public Health',
+            'YOUR FRIEND LEVEL/YEAR': 'LEVEL 200',
+            'YOUR FRIEND POLITICAL PARTY': 'TESCON', 'YOUR FRIEND RELIGION': 'Muslim',
+            'YOUR FRIEND TRIBE': 'Dagomba',
+        }
+        df = pd.DataFrame([row], columns=columns)
+        df.columns = [_normalize_column(c) for c in df.columns]
+
+        assert DataImporter.is_survey_format(df.columns) is True
+        result = DataImporter._process_survey_dataframe(df)
+        assert result['valid_rows'] == 1
+
+        me = Student.query.filter_by(name='Kwame Mensah').first()
+        friend = Student.query.filter_by(name='Ama Owusu').first()
+
+        # Respondent fields -- none may be blank.
+        assert me.year == 4 and me.party == 'TEIN' and me.tribe == 'Akan'
+        assert me.college == 'School of Nursing'
+        assert me.religion == 'Christian'
+        assert me.department == 'Bsc Nursing'
+
+        # Friend fields must not be confused with the respondent's.
+        assert friend.year == 2 and friend.party == 'TESCON'
+        assert friend.college == 'School of Public Health'
+        assert friend.religion == 'Muslim'
+        assert friend.department == 'Bsc Public Health'

@@ -47,14 +47,80 @@ SURVEY_COLUMN_CANDIDATES = {
 }
 
 
+# Fallback keywords, tried when no candidate phrase above matches exactly.
+# Real forms wrap the same question in punctuation, examples and typos --
+# "SCHOOL/COLLEGE\neg. School of Public Health", "YEAR/LEVEL",
+# "REPONDENT RELIGION" -- so the second pass looks for a keyword anywhere in
+# the header instead of demanding the whole phrase. Order matters: the most
+# specific keyword for a field is tried first.
+SURVEY_FIELD_KEYWORDS = {
+    'from_name': ['nameofrespondent', 'respondentname', 'name'],
+    'from_gender': ['gender'],
+    'from_department': ['programofstudy', 'programmeofstudy', 'program', 'programme', 'department'],
+    'from_religion': ['religion'],
+    'from_tribe': ['tribe'],
+    'from_regional_capital': ['regionalcapital'],
+    'from_hometown': ['hometown'],
+    'from_district': ['district'],
+    'from_party': ['politicalparty', 'party'],
+    'from_college': ['schoolcollege', 'collegeschool', 'college', 'school'],
+    'from_year': ['yearofstudy', 'yearlevel', 'levelyear', 'year', 'level'],
+}
+
+
+def _squash(text):
+    """Strip everything but letters and digits, so that punctuation, line
+    breaks and missing spaces stop mattering: 'NAMEOF YOUR FRIEND' and
+    'Name of your friend' both become 'nameofyourfriend'."""
+    return re.sub(r'[^a-z0-9]', '', str(text).lower())
+
+
 def _resolve_survey_columns(columns):
-    """Map each survey field to whichever candidate header the file actually
-    uses (None if absent -- every field except the two names is optional)."""
+    """Map each survey field to the header the file actually uses, or None
+    when the survey didn't ask that question at all.
+
+    Two passes. First an exact match against the known phrasings, which is
+    precise and cheap. Then a keyword search over the squashed header, which
+    survives slashes, inline examples, line breaks and typos. A column is
+    only ever claimed by one field.
+
+    Friend columns are told apart from respondent columns by the word
+    'friend': a 'to_' field only ever matches a header containing it, and a
+    'from_' field never does. Without that rule 'YOUR FRIEND COLLEGE/SCHOOL'
+    would satisfy the respondent's college just as well as the friend's.
+    """
     present = set(columns)
-    return {
-        field: next((c for c in candidates if c in present), None)
-        for field, candidates in SURVEY_COLUMN_CANDIDATES.items()
-    }
+    resolved = {}
+    claimed = set()
+
+    # Pass 1 -- exact phrase match.
+    for field, candidates in SURVEY_COLUMN_CANDIDATES.items():
+        match = next((c for c in candidates if c in present and c not in claimed), None)
+        resolved[field] = match
+        if match:
+            claimed.add(match)
+
+    # Pass 2 -- keyword search for whatever pass 1 left unresolved.
+    squashed = {c: _squash(c) for c in columns}
+    for field, keywords in SURVEY_FIELD_KEYWORDS.items():
+        for target in (field, field.replace('from_', 'to_', 1)):
+            if resolved.get(target):
+                continue
+            wants_friend = target.startswith('to_')
+            for keyword in keywords:
+                match = next(
+                    (c for c in columns
+                     if c not in claimed
+                     and ('friend' in squashed[c]) == wants_friend
+                     and keyword in squashed[c]),
+                    None,
+                )
+                if match:
+                    resolved[target] = match
+                    claimed.add(match)
+                    break
+
+    return resolved
 
 
 # Phrases that mean "I'm not answering", typed into a name box. Kept in
@@ -102,16 +168,25 @@ def _clean_party(value):
 
 
 def _clean_year(value):
-    """Normalize a year-of-study answer to an int 1-4, or None. Handles the
-    numeric cells a Google Sheets/Excel export produces (pandas reads them
-    as floats, so the answer "2" arrives here as 2.0)."""
+    """Normalize a year-of-study answer to an int 1-4, or None.
+
+    Accepts the three forms real responses use:
+      "2", 2, 2.0        -> 2   (spreadsheets hand back floats)
+      "LEVEL 300"        -> 3   (Ghanaian universities count in levels of
+                                 100, which is what UTAS respondents give)
+      "sophomore"        -> None (no digits, not something to guess at)
+    """
     if value is None:
         return None
-    try:
-        year = int(float(str(value).strip()))
-    except (ValueError, OverflowError):
+
+    digits = re.search(r'\d+', str(value))
+    if not digits:
         return None
-    return year if 1 <= year <= 4 else None
+
+    number = int(digits.group())
+    if number >= 100:          # level notation: 100/200/300/400
+        number //= 100
+    return number if 1 <= number <= 4 else None
 
 
 def _normalize_column(col):
@@ -255,16 +330,28 @@ class DataImporter:
         for candidate in SURVEY_COLUMN_CANDIDATES['from_name']:
             if candidate in present:
                 return candidate
+        # Squashed fallback: a name column that isn't the friend's.
+        for c in columns:
+            s = _squash(c)
+            if 'friend' not in s and ('nameofrespondent' in s or 'respondentname' in s):
+                return c
         return None
 
     @staticmethod
     def _find_friend_name_column(columns):
-        """The friend's-name question varies by course/cohort (e.g. 'Name of
-        your friend in CSC104 class...'), so match by prefix instead of a
-        hardcoded exact phrase -- anything starting with 'name of your
-        friend' works, whatever comes after it."""
+        """The friend's-name question is worded differently every round --
+        'Name of your friend in CSC104 class...', 'NAMEOF YOUR FRIEND' with
+        the space missing. Matching on the squashed header absorbs both the
+        punctuation and the typo; a trailing course name is fine because
+        this looks for the phrase at the start."""
         for c in columns:
-            if c.startswith('name of your friend') or c.startswith('name of your friends'):
+            s = _squash(c)
+            if s.startswith('nameofyourfriend') or s.startswith('nameofyourfriends'):
+                return c
+        # Any remaining friend column that is clearly the name question.
+        for c in columns:
+            s = _squash(c)
+            if 'friend' in s and 'name' in s:
                 return c
         return None
 
